@@ -6338,7 +6338,7 @@ const useAuth = () => {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      return { success: true };
+    return { success: true };
     } catch (e) { return { success: false, error: e.message }; }
     finally { setIsLoading(false); }
   };
@@ -6348,7 +6348,7 @@ const useAuth = () => {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      return { success: true };
+    return { success: true };
     } catch (e) { return { success: false, error: e.message }; }
     finally { setIsLoading(false); }
   };
@@ -6359,7 +6359,7 @@ const useAuth = () => {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       if (name) await fbUpdateProfile(cred.user, { displayName: name });
       await sendEmailVerification(cred.user);
-      return { success: true };
+    return { success: true };
     } catch (e) { return { success: false, error: e.message }; }
     finally { setIsLoading(false); }
   };
