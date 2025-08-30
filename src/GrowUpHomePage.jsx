@@ -1,5 +1,6 @@
 import React, { useMemo, useState, createContext, useContext, useEffect } from "react";
-import { auth, listenToAuth } from './firebase.js';
+import { auth, listenToAuth, db } from './firebase.js';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile as fbUpdateProfile, sendEmailVerification, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { motion } from "framer-motion";
 import { HashRouter as Router, Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
@@ -5282,11 +5283,16 @@ const useFinancialAssessment = () => {
   };
 };
 
-// Simple localStorage-based progress system
+// Progress system stored in Firestore per user; falls back to local for guest
 const useGameProgress = () => {
-  const [progress, setProgress] = useState(() => {
-    const saved = localStorage.getItem('growup-progress');
-    return saved ? JSON.parse(saved) : {
+  const [uid, setUid] = useState(() => (typeof window !== 'undefined' && (auth?.currentUser?.uid || 'guest')));
+  useEffect(() => {
+    const unsub = listenToAuth?.((u) => setUid(u?.uid || 'guest'));
+    return () => { if (unsub) unsub(); };
+  }, []);
+  const storageKey = `growup-progress-${uid || 'guest'}`;
+
+  const defaultProgress = {
       completedGuides: [],
       completedTasks: [],
       totalPoints: 0,
@@ -5295,11 +5301,44 @@ const useGameProgress = () => {
       unlockedAchievements: [],
       categoryProgress: {}
     };
+
+  const [progress, setProgress] = useState(() => {
+    const saved = localStorage.getItem(storageKey);
+    return saved ? JSON.parse(saved) : defaultProgress;
   });
 
-  const saveProgress = (newProgress) => {
-    localStorage.setItem('growup-progress', JSON.stringify(newProgress));
+  // Reload progress when the signed-in user changes
+  useEffect(() => {
+    // If guest, use localStorage; else subscribe to Firestore doc
+    if (!uid || uid === 'guest') {
+      const saved = localStorage.getItem(storageKey);
+      setProgress(saved ? JSON.parse(saved) : defaultProgress);
+      return;
+    }
+    const ref = doc(db, 'users', uid, 'data', 'progress');
+    let cancelled = false;
+    const unsub = onSnapshot(ref, async (snap) => {
+      if (cancelled) return;
+      if (snap.exists()) {
+        const data = snap.data();
+        setProgress({ ...defaultProgress, ...data });
+      } else {
+        await setDoc(ref, defaultProgress, { merge: true });
+        setProgress(defaultProgress);
+      }
+    });
+    return () => { cancelled = true; unsub(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
+
+  const saveProgress = async (newProgress) => {
     setProgress(newProgress);
+    if (uid && uid !== 'guest') {
+      const ref = doc(db, 'users', uid, 'data', 'progress');
+      await setDoc(ref, newProgress, { merge: true });
+    } else {
+      localStorage.setItem(storageKey, JSON.stringify(newProgress));
+    }
   };
 
   const completeGuide = (guideTitle, categoryKey) => {
