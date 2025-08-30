@@ -107,6 +107,176 @@ const SectionTitle = ({ eyebrow, title, desc }) => (
 // -----------------------------
 // Data
 // -----------------------------
+// Plan templates and modules (MVP)
+const PLAN_MODULES = [
+  {
+    id: 'move-out-starter',
+    title: 'Move Out Starter',
+    description: 'Core steps to safely move out and set up utilities',
+    tags: ['moving-out', 'living'],
+    categoryKey: 'living',
+    guideIds: ['finding-apartment', 'utilities-setup-basics', 'renters-insurance-basics'],
+    effortPoints: 6,
+    minAge: 16,
+  },
+  {
+    id: 'first-credit-card',
+    title: 'First Credit Card',
+    description: 'Build credit responsibly from day one',
+    tags: ['credit', 'money'],
+    categoryKey: 'money-finance',
+    guideIds: ['credit-card-basics', 'credit-score-101'],
+    effortPoints: 4,
+  },
+  {
+    id: 'budget-and-savings',
+    title: 'Budget & Savings',
+    description: 'Set up a basic budget and automatic savings',
+    tags: ['budget', 'savings', 'money'],
+    categoryKey: 'money-finance',
+    guideIds: ['budgeting-basics', 'open-savings-account'],
+    effortPoints: 5,
+  },
+  {
+    id: 'health-coverage-101',
+    title: 'Health Coverage 101',
+    description: 'Find a PCP and understand your plan',
+    tags: ['health', 'pcp'],
+    categoryKey: 'health',
+    guideIds: ['find-pcp', 'health-insurance-101'],
+    effortPoints: 5,
+  },
+  {
+    id: 'first-job-ramp',
+    title: 'First Job Ramp',
+    description: 'Basics for resumes, interviews, and onboarding',
+    tags: ['career', 'job'],
+    categoryKey: 'career',
+    guideIds: ['resume-basics', 'interview-basics', 'first-day-checklist'],
+    effortPoints: 6,
+  },
+];
+
+const PLAN_TEMPLATES = [
+  {
+    id: 'template-moving-out',
+    name: 'Moving Out Soon',
+    targetTags: ['moving-out'],
+    requiredModules: ['move-out-starter', 'budget-and-savings'],
+    optionalModules: ['first-credit-card', 'health-coverage-101'],
+    weeklyPacing: 5,
+  },
+  {
+    id: 'template-first-job',
+    name: 'First Job',
+    targetTags: ['job', 'career'],
+    requiredModules: ['first-job-ramp', 'budget-and-savings'],
+    optionalModules: ['first-credit-card', 'health-coverage-101'],
+    weeklyPacing: 5,
+  },
+  {
+    id: 'template-student',
+    name: 'Student Foundations',
+    targetTags: ['school', 'student'],
+    requiredModules: ['budget-and-savings'],
+    optionalModules: ['first-credit-card', 'health-coverage-101'],
+    weeklyPacing: 4,
+  },
+];
+
+// -----------------------------
+// Plans Hook (localStorage MVP)
+// -----------------------------
+const PlansContext = createContext(null);
+
+const usePlans = () => {
+  const [activePlan, setActivePlan] = useState(() => {
+    const raw = localStorage.getItem('growup-active-plan');
+    return raw ? JSON.parse(raw) : null;
+  });
+
+  useEffect(() => {
+    if (activePlan) localStorage.setItem('growup-active-plan', JSON.stringify(activePlan));
+  }, [activePlan]);
+
+  const getProfile = () => {
+    const raw = localStorage.getItem('growup-user-profile');
+    return raw ? JSON.parse(raw) : null;
+  };
+
+  const findModules = (ids) => PLAN_MODULES.filter(m => ids.includes(m.id));
+
+  const scoreTemplate = (template, profile) => {
+    if (!profile) return 0;
+    const tags = new Set(profile.tags || []);
+    let score = 0;
+    template.targetTags.forEach(t => { if (tags.has(t)) score += 2; });
+    return score;
+  };
+
+  const generatePlan = (profileOverride) => {
+    const profile = profileOverride || getProfile();
+    const scored = PLAN_TEMPLATES
+      .map(t => ({ t, score: scoreTemplate(t, profile) }))
+      .sort((a, b) => b.score - a.score);
+    const chosen = scored[0]?.t || PLAN_TEMPLATES[0];
+    const required = findModules(chosen.requiredModules);
+    const optional = findModules(chosen.optionalModules).slice(0, 2);
+    const modules = [...required, ...optional];
+    // naive weekly chunking by effortPoints
+    const weeks = [];
+    let week = { tasks: [], effort: 0 };
+    modules.forEach(m => {
+      week.tasks.push(...m.guideIds.map(id => ({ id: `${m.id}:${id}`, guideId: id, moduleId: m.id, completed: false })));
+      week.effort += m.effortPoints;
+      if (week.effort >= chosen.weeklyPacing) { weeks.push(week); week = { tasks: [], effort: 0 }; }
+    });
+    if (week.tasks.length) weeks.push(week);
+    const plan = { templateId: chosen.id, modules: modules.map(m => m.id), weeks, startedAt: Date.now(), version: 1 };
+    setActivePlan(plan);
+    return plan;
+  };
+
+  const getActivePlan = () => activePlan;
+
+  const completeTaskInPlan = (taskId) => {
+    if (!activePlan) return;
+    const next = { ...activePlan, weeks: activePlan.weeks.map(w => ({ ...w, tasks: w.tasks.map(t => t.id === taskId ? { ...t, completed: true } : t) })) };
+    setActivePlan(next);
+  };
+
+  const toggleTaskInPlan = (taskId) => {
+    if (!activePlan) return;
+    const next = { ...activePlan, weeks: activePlan.weeks.map(w => ({ ...w, tasks: w.tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t) })) };
+    setActivePlan(next);
+  };
+
+  const completeWeekInPlan = (weekIdx) => {
+    if (!activePlan) return;
+    const next = { ...activePlan, weeks: activePlan.weeks.map((w, i) => i !== weekIdx ? w : ({ ...w, tasks: w.tasks.map(t => ({ ...t, completed: true })) })) };
+    setActivePlan(next);
+  };
+
+  // Listen for quiz completion event to auto-generate a plan
+  useEffect(() => {
+    const onGenerate = () => generatePlan();
+    window.addEventListener('growup-generate-plan', onGenerate);
+    return () => window.removeEventListener('growup-generate-plan', onGenerate);
+  }, [generatePlan]);
+
+  return { activePlan, generatePlan, getActivePlan, completeTaskInPlan, toggleTaskInPlan, completeWeekInPlan };
+};
+
+const PlansProvider = ({ children }) => {
+  const value = usePlans();
+  return <PlansContext.Provider value={value}>{children}</PlansContext.Provider>;
+};
+
+const usePlansContext = () => {
+  const ctx = useContext(PlansContext);
+  if (!ctx) throw new Error('usePlansContext must be used within PlansProvider');
+  return ctx;
+};
 const CATEGORIES = [
   {
     key: "life-skills",
@@ -3366,12 +3536,72 @@ const DETAILED_GUIDES = {
             }
           ]
         },
-        { id: "tax-3", text: "Complete your federal tax return", completed: false },
-        { id: "tax-4", text: "Complete your state tax return (if required)", completed: false },
-        { id: "tax-5", text: "Review returns for accuracy before filing", completed: false },
-        { id: "tax-6", text: "File taxes electronically with direct deposit setup", completed: false },
-        { id: "tax-7", text: "Save copies of filed returns and supporting documents", completed: false },
-        { id: "tax-8", text: "Set up system for tracking next year's tax information", completed: false }
+        { 
+          id: "tax-3", 
+          text: "Complete your federal tax return", 
+          completed: false,
+          microActions: [
+            { text: "Sign in or create an account in your chosen tax software", time: "3 mins", resources: ["https://turbotax.intuit.com", "https://www.hrblock.com", "https://www.creditkarma.com/tax"] },
+            { text: "Enter personal information (name, SSN, address)", time: "5 mins", resources: ["https://www.irs.gov/individuals"] },
+            { text: "Import or enter W-2 information", time: "10 mins", resources: ["https://www.irs.gov/forms-pubs/about-form-w-2"] },
+            { text: "Report all income (W-2s, 1099s, interest/dividends)", time: "10 mins", resources: ["https://www.irs.gov/forms-instructions"] },
+            { text: "Answer questions for deductions/credits (education, EITC, CTC)", time: "10 mins", resources: ["https://www.irs.gov/credits-deductions-for-individuals"] },
+            { text: "Run the software’s error check and address any flags", time: "5 mins" }
+          ]
+        },
+        { 
+          id: "tax-4", 
+          text: "Complete your state tax return (if required)", 
+          completed: false,
+          microActions: [
+            { text: "Confirm residency/part-year/nonresident status", time: "3 mins" },
+            { text: "Import state return from federal data (most software prompts)", time: "2 mins" },
+            { text: "Add state-specific deductions/credits (529, renter’s credit, etc.)", time: "8 mins" },
+            { text: "Check city/local taxes if your state requires it", time: "3 mins" }
+          ]
+        },
+        { 
+          id: "tax-5", 
+          text: "Review returns for accuracy before filing", 
+          completed: false,
+          microActions: [
+            { text: "Verify names, SSNs, and address match your documents", time: "2 mins" },
+            { text: "Confirm refund/amount owed looks reasonable vs last year", time: "3 mins" },
+            { text: "Verify bank routing & account numbers for direct deposit", time: "2 mins" },
+            { text: "Download/print draft PDF and skim for typos", time: "5 mins" }
+          ]
+        },
+        { 
+          id: "tax-6", 
+          text: "File taxes electronically with direct deposit setup", 
+          completed: false,
+          microActions: [
+            { text: "Choose e-file option in your software", time: "1 min" },
+            { text: "Enter routing and account numbers for refund deposit", time: "2 mins" },
+            { text: "Submit return and save the confirmation screen", time: "2 mins" }
+          ]
+        },
+        { 
+          id: "tax-7", 
+          text: "Save copies of filed returns and supporting documents", 
+          completed: false,
+          microActions: [
+            { text: "Save PDFs of federal/state returns to cloud storage", time: "3 mins", resources: ["https://drive.google.com", "https://www.dropbox.com"] },
+            { text: "Store confirmation numbers and filing receipts", time: "2 mins" },
+            { text: "Backup to a second location (external drive or secondary cloud)", time: "3 mins" }
+          ]
+        },
+        { 
+          id: "tax-8", 
+          text: "Set up system for tracking next year's tax information", 
+          completed: false,
+          microActions: [
+            { text: "Create a receipts folder (digital and/or physical)", time: "3 mins" },
+            { text: "Set quarterly reminders if self-employed for estimated taxes", time: "2 mins", resources: ["https://www.irs.gov/businesses/small-businesses-self-employed/estimated-taxes"] },
+            { text: "Update your W-4 if refund was large or you owed a lot", time: "5 mins", resources: ["https://www.irs.gov/forms-pubs/about-form-w-4"] },
+            { text: "Add a calendar reminder for next tax season start (late Jan)", time: "1 min" }
+          ]
+        }
       ],
       tips: [
         "File as early as possible to get your refund sooner and reduce fraud risk",
@@ -5242,28 +5472,59 @@ const getAllGuides = () => {
 
 const searchGuides = (query) => {
   if (!query.trim()) return [];
-  
-  const allGuides = getAllGuides();
-  const searchTerm = query.toLowerCase().trim();
-  
-  return allGuides.filter(guide => {
-    const matchesTitle = guide.title.toLowerCase().includes(searchTerm);
-    const matchesSummary = guide.summary.toLowerCase().includes(searchTerm);
-    const matchesCategory = guide.categoryName.toLowerCase().includes(searchTerm);
-    const matchesSteps = guide.steps.some(step => step.toLowerCase().includes(searchTerm));
-    const matchesDifficulty = guide.difficulty.toLowerCase().includes(searchTerm);
-    
-    return matchesTitle || matchesSummary || matchesCategory || matchesSteps || matchesDifficulty;
-  }).sort((a, b) => {
-    // Prioritize title matches, then summary matches
-    const aTitle = a.title.toLowerCase().includes(searchTerm);
-    const bTitle = b.title.toLowerCase().includes(searchTerm);
-    
-    if (aTitle && !bTitle) return -1;
-    if (!aTitle && bTitle) return 1;
-    
-    return 0;
+
+  const normalize = (s) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, ' ').trim();
+  const slugify = (s) => normalize(s).replace(/\s+/g, '-');
+
+  const SYNONYMS = {
+    bank: ['banking', 'checking', 'savings', 'account'],
+    credit: ['credit card', 'card', 'score', 'fico'],
+    doctor: ['pcp', 'primary care', 'physician'],
+    budget: ['budgeting', 'spending plan'],
+    apartment: ['rent', 'lease', 'housing'],
+  };
+
+  // Expand query with synonyms
+  const qNorm = normalize(query);
+  const tokens = qNorm.split(' ');
+  const expandedTokens = new Set(tokens);
+  tokens.forEach((t) => {
+    const syns = SYNONYMS[t];
+    if (syns) syns.forEach((w) => expandedTokens.add(normalize(w)));
   });
+
+  const allGuides = getAllGuides();
+
+  const scored = allGuides.map((g) => {
+    const title = normalize(g.title);
+    const titleSlug = slugify(g.title);
+    const summary = normalize(g.summary || '');
+    const category = normalize(g.categoryName || '');
+    const steps = (g.steps || []).map(normalize).join(' ');
+
+    let score = 0;
+    expandedTokens.forEach((t) => {
+      if (!t) return;
+      if (title === t) score += 6; // exact title
+      if (title.includes(t)) score += 3; // partial title
+      if (summary.includes(t)) score += 2;
+      if (category.includes(t)) score += 2;
+      if (steps.includes(t)) score += 1;
+      if (titleSlug.includes(t)) score += 3; // slug match
+    });
+
+    // Boost if any token is a prefix
+    expandedTokens.forEach((t) => {
+      if (title.startsWith(t)) score += 1;
+    });
+
+    return { guide: g, score };
+  })
+  .filter((x) => x.score > 0)
+  .sort((a, b) => b.score - a.score)
+  .map((x) => x.guide);
+
+  return scored;
 };
 
 // Age-based milestone system
@@ -7951,19 +8212,19 @@ function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 lg:py-28">
-        <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-gradient-to-br from-indigo-400/20 to-cyan-300/20 blur-3xl" />
-        <div className="pointer-events-none absolute -right-24 -bottom-24 h-96 w-96 rounded-full bg-gradient-to-br from-fuchsia-400/20 to-rose-300/20 blur-3xl" />
+      <section className="relative overflow-hidden py-16 sm:py-20 lg:py-28">
+        <div className="hidden sm:block pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-gradient-to-br from-indigo-400/20 to-cyan-300/20 blur-3xl" />
+        <div className="hidden sm:block pointer-events-none absolute -right-24 -bottom-24 h-96 w-96 rounded-full bg-gradient-to-br from-fuchsia-400/20 to-rose-300/20 blur-3xl" />
         
         <Container>
           <div className="mx-auto max-w-4xl text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.35 }}
             >
               <Badge className="mb-6">The #1 adulting platform for young people</Badge>
-              <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl lg:text-7xl">
+              <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-7xl">
                 Master adulting
                 <br />
                 <span className="bg-gradient-to-r from-indigo-600 to-sky-500 bg-clip-text text-transparent">
@@ -7974,29 +8235,118 @@ function LandingPage() {
                 From setting up your first bank account to navigating healthcare, we turn overwhelming adult tasks into simple, achievable wins.
               </p>
               
-              <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center">
+              <div className="mt-8 sm:mt-10 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <Button
                   onClick={() => navigate('/signup')}
-                  className="rounded-2xl bg-indigo-600 px-8 py-4 text-lg font-semibold text-white hover:bg-indigo-700"
+                  className="rounded-2xl bg-indigo-600 px-5 py-3 text-base sm:px-8 sm:py-4 sm:text-lg font-semibold text-white hover:bg-indigo-700"
                   icon={Rocket}
                 >
                   Start Your Journey
                 </Button>
                 <Button
                   onClick={() => navigate('/login')}
-                  className="rounded-2xl border border-zinc-200 bg-white px-8 py-4 text-lg font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  className="rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-base sm:px-8 sm:py-4 sm:text-lg font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   icon={LogIn}
                 >
                   Sign In
                 </Button>
+              </div>
+
+              {/* Trust metrics */}
+              <div className="mt-10 grid grid-cols-1 gap-3 text-sm text-zinc-600 dark:text-zinc-400 sm:grid-cols-3">
+                <div className="rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/60">
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    100+ actionable guides
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/60">
+                  <div className="flex items-center justify-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    10K+ tasks completed
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/60">
+                  <div className="flex items-center justify-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                    Privacy-first, no data sold
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
         </Container>
       </section>
 
+      {/* Features */}
+      <section className="py-12 sm:py-16">
+        <Container>
+          <div className="mx-auto max-w-2xl text-center mb-14">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Everything you need to become independent</h2>
+            <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-400">Bite‑size lessons, checklists, and tools that turn adulting from overwhelming to manageable.</p>
+          </div>
+
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Card className="p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-indigo-50 p-2 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300"><BookOpen className="h-5 w-5" /></div>
+                <div>
+                  <h3 className="font-semibold">Structured roadmaps</h3>
+                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Clear step‑by‑step paths for money, health, housing, career, and life skills.</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300"><Award className="h-5 w-5" /></div>
+                <div>
+                  <h3 className="font-semibold">Gamified progress</h3>
+                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Earn XP, unlock achievements, and keep a streak while you learn.</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-sky-50 p-2 text-sky-600 dark:bg-sky-900/30 dark:text-sky-300"><BarChart3 className="h-5 w-5" /></div>
+                <div>
+                  <h3 className="font-semibold">Peer benchmarks</h3>
+                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">See how your finances compare to people your age and build a plan.</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-amber-50 p-2 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300"><Zap className="h-5 w-5" /></div>
+                <div>
+                  <h3 className="font-semibold">Actionable checklists</h3>
+                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Every guide comes with tasks you can actually do and track.</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-rose-50 p-2 text-rose-600 dark:bg-rose-900/30 dark:text-rose-300"><HeartHandshake className="h-5 w-5" /></div>
+                <div>
+                  <h3 className="font-semibold">Supportive community</h3>
+                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Get encouragement and see what others your age are tackling next.</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-zinc-50 p-2 text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-200"><Lock className="h-5 w-5" /></div>
+                <div>
+                  <h3 className="font-semibold">Privacy first</h3>
+                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Your data stays yours. We never sell personal information.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </Container>
+      </section>
+
       {/* Categories Preview */}
-      <section className="py-20 bg-zinc-50/50 dark:bg-zinc-950/50">
+      <section className="py-12 sm:py-16 bg-zinc-50/50 dark:bg-zinc-950/50">
         <Container>
           <div className="mx-auto max-w-2xl text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -8014,7 +8364,7 @@ function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.3, delay: index * 0.07 }}
               >
                 <Card className="h-full">
                   <div className="flex items-start justify-between mb-4">
@@ -8031,8 +8381,62 @@ function LandingPage() {
         </Container>
       </section>
 
+      {/* Testimonials */}
+      <section className="py-12 sm:py-16">
+        <Container>
+          <div className="mx-auto max-w-2xl text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Loved by learners</h2>
+            <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-400">Real stories from young people leveling up their life skills.</p>
+          </div>
+
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
+            <Card className="p-4 sm:p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white">A</div>
+                <div>
+                  <div className="font-semibold">Alex, 19</div>
+                  <div className="flex text-amber-500"><Star className="h-4 w-4" /><Star className="h-4 w-4" /><Star className="h-4 w-4" /><Star className="h-4 w-4" /><Star className="h-4 w-4" /></div>
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">“I opened my first credit card and built a budget in one weekend. The step‑by‑step tasks made it easy.”</p>
+            </Card>
+            <Card className="p-4 sm:p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-white">M</div>
+                <div>
+                  <div className="font-semibold">Maya, 22</div>
+                  <div className="flex text-amber-500"><Star className="h-4 w-4" /><Star className="h-4 w-4" /><Star className="h-4 w-4" /><Star className="h-4 w-4" /><Star className="h-4 w-4" /></div>
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">“The benchmarks showed me where I stood with savings. Now I’m depositing automatically every paycheck.”</p>
+            </Card>
+            <Card className="p-4 sm:p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-white">J</div>
+                <div>
+                  <div className="font-semibold">Jordan, 24</div>
+                  <div className="flex text-amber-500"><Star className="h-4 w-4" /><Star className="h-4 w-4" /><Star className="h-4 w-4" /><Star className="h-4 w-4" /><Star className="h-4 w-4" /></div>
+                </div>
+              </div>
+              <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">“I finally feel confident handling renters insurance and basic healthcare stuff. Wish I had this sooner.”</p>
+            </Card>
+          </div>
+        </Container>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-12 sm:py-16">
+        <Container>
+          <div className="mx-auto max-w-2xl text-center mb-10">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Frequently asked questions</h2>
+          </div>
+
+          <FAQ />
+        </Container>
+      </section>
+
       {/* Final CTA */}
-      <section className="py-20 bg-gradient-to-r from-indigo-600 to-sky-500">
+      <section className="py-14 sm:py-20 bg-gradient-to-r from-indigo-600 to-sky-500">
         <Container>
           <div className="mx-auto max-w-2xl text-center text-white">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -8044,7 +8448,7 @@ function LandingPage() {
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button
                 onClick={() => navigate('/signup')}
-                className="rounded-2xl bg-white px-8 py-4 text-lg font-semibold text-indigo-600 hover:bg-gray-50"
+                className="rounded-2xl bg-white px-5 py-3 text-base sm:px-8 sm:py-4 sm:text-lg font-semibold text-indigo-600 hover:bg-gray-50"
                 icon={Rocket}
               >
                 Start Free Today
@@ -8072,6 +8476,49 @@ function LandingPage() {
   );
 }
 
+// Simple FAQ accordion used on the LandingPage
+function FAQ() {
+  const [openIndex, setOpenIndex] = useState(null);
+  const faqs = [
+    {
+      q: "What is Grow Up?",
+      a: "Grow Up is a guided learning platform that turns essential adult skills into step‑by‑step roadmaps with checklists, progress tracking, and positive reinforcement.",
+    },
+    {
+      q: "Is Grow Up free?",
+      a: "You can start for free and access a large set of guides. We’ll offer optional premium content and tools later — your data remains private either way.",
+    },
+    {
+      q: "How does progress tracking work?",
+      a: "Each guide breaks into small tasks. When you complete all tasks in a guide, it’s marked complete automatically and you earn XP toward achievements.",
+    },
+    {
+      q: "Do you sell my data?",
+      a: "No. We practice a privacy‑first approach. Your personal data is never sold.",
+    },
+  ];
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <div className="space-y-3">
+        {faqs.map((item, idx) => (
+          <Card key={idx} className="cursor-pointer" onClick={() => setOpenIndex(openIndex === idx ? null : idx)}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="font-semibold">{item.q}</div>
+                {openIndex === idx && (
+                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{item.a}</p>
+                )}
+              </div>
+              <ChevronRight className={`h-5 w-5 shrink-0 transition-transform ${openIndex === idx ? 'rotate-90 text-indigo-600' : 'text-zinc-400'}`} />
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // -----------------------------
 // Main Home Page (authenticated users only)
 // -----------------------------
@@ -8086,6 +8533,7 @@ function HomePage() {
   const navigate = useNavigate();
   const { getCategoryProgress, getLevel, progress } = useGameProgress();
   const { user, logout, isAuthenticated } = useAuthContext();
+  const { activePlan, generatePlan } = usePlansContext();
 
   const searchSuggestions = useMemo(() => {
     if (!query.trim()) return [];
@@ -8264,12 +8712,12 @@ function HomePage() {
       </header>
 
       {/* Enhanced Hero Section */}
-      <section className="relative overflow-hidden py-20 md:py-28">
+      <section className="relative overflow-hidden py-14 sm:py-20 md:py-28">
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 via-transparent to-sky-50/30 dark:from-indigo-900/10 dark:to-sky-900/10"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-200/20 to-sky-200/20 dark:from-indigo-800/10 dark:to-sky-800/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-emerald-200/20 to-teal-200/20 dark:from-emerald-800/10 dark:to-teal-800/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-purple-200/10 to-pink-200/10 dark:from-purple-800/5 dark:to-pink-800/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="hidden sm:block absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-200/20 to-sky-200/20 dark:from-indigo-800/10 dark:to-sky-800/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="hidden sm:block absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-emerald-200/20 to-teal-200/20 dark:from-emerald-800/10 dark:to-teal-800/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="hidden sm:block absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-purple-200/10 to-pink-200/10 dark:from-purple-800/5 dark:to-pink-800/5 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
         
         <Container className="relative z-10">
           <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -8277,20 +8725,20 @@ function HomePage() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
-              transition={{ duration: 0.6 }}
-              className="space-y-8"
+              transition={{ duration: 0.35 }}
+              className="space-y-6 sm:space-y-8"
             >
               {/* Dynamic Badge */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
               >
               {isAuthenticated ? (
                   <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 px-4 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50 backdrop-blur-sm">
                     <motion.div
                       animate={{ rotate: [0, 15, -15, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                     >
                       👋
                     </motion.div>
@@ -8317,8 +8765,8 @@ function HomePage() {
                 <motion.h1 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.3 }}
-                  className="text-4xl font-extrabold leading-tight tracking-tight lg:text-6xl"
+                  transition={{ duration: 0.35, delay: 0.15 }}
+                  className="text-3xl sm:text-4xl font-extrabold leading-tight tracking-tight lg:text-6xl"
                 >
                 {isAuthenticated ? (
                     <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-sky-600 dark:from-indigo-400 dark:via-purple-400 dark:to-sky-400 bg-clip-text text-transparent">
@@ -8334,8 +8782,8 @@ function HomePage() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.4 }}
-                    className="flex items-center gap-6 text-sm"
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                    className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm"
                   >
                     <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 flex items-center justify-center">
@@ -8362,11 +8810,11 @@ function HomePage() {
               </div>
 
               {/* Description */}
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="text-lg text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-xl"
+                transition={{ duration: 0.35, delay: 0.25 }}
+                className="text-base sm:text-lg text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-xl"
               >
                 {isAuthenticated ? (
                   <>Ready to level up? Pick up where you left off or explore new skills. Your personalized learning path awaits!</>
@@ -8379,8 +8827,8 @@ function HomePage() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="flex flex-wrap gap-4"
+                transition={{ duration: 0.25, delay: 0.1 }}
+                className="flex flex-wrap gap-3 sm:gap-4 justify-center"
               >
                 <Button 
                   className="rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105" 
@@ -8407,8 +8855,8 @@ function HomePage() {
                     onClick={() => { setShowQuiz(true); document.getElementById("quiz")?.scrollIntoView({ behavior: "smooth" }); }} 
                     icon={CheckCircle2}
                   >
-                  Take the Quiz
-                </Button>
+                    Take the Quiz
+                  </Button>
                 )}
               </motion.div>
 
@@ -8416,7 +8864,7 @@ function HomePage() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.7 }}
+                transition={{ duration: 0.35, delay: 0.35 }}
                 className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400"
               >
                 <div className="flex items-center gap-2">
@@ -8436,7 +8884,7 @@ function HomePage() {
             <motion.div 
               initial={{ opacity: 0, x: 20 }} 
               animate={{ opacity: 1, x: 0 }} 
-              transition={{ duration: 0.6, delay: 0.3 }}
+              transition={{ duration: 0.35, delay: 0.15 }}
               className="relative"
             >
               <div className="relative">
@@ -8460,7 +8908,7 @@ function HomePage() {
                           key={category.key}
                           initial={{ opacity: 0, y: 20, scale: 0.9 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
+                          transition={{ duration: 0.25, delay: 0.25 + index * 0.07 }}
                         >
                           <div 
                             className="group relative rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 p-4 cursor-pointer transition-all duration-300 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-600 hover:shadow-lg hover:scale-105"
@@ -8470,14 +8918,13 @@ function HomePage() {
                             }}
                           >
                             {/* Progress Ring Around Icon */}
-                            <div className="relative mb-3">
-                              <div className={`inline-flex rounded-2xl bg-gradient-to-br ${category.color} p-3 text-white shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
-                                {React.createElement(category.icon, { className: "h-6 w-6" })}
+                            <div className="relative mb-3 w-12 h-12 sm:w-14 sm:h-14">
+                              <div className={`absolute inset-0 grid place-items-center rounded-2xl bg-gradient-to-br ${category.color} text-white shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
+                                {React.createElement(category.icon, { className: "h-5 w-5 sm:h-6 sm:w-6" })}
                     </div>
-                              
                               {/* Progress Ring */}
                               {isAuthenticated && categoryProgress.total > 0 && (
-                                <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 48 48">
+                                <svg className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full transform -rotate-90" viewBox="0 0 48 48">
                                   <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-zinc-200 dark:text-zinc-700" />
                                   <motion.circle 
                                     cx="24" 
@@ -8491,7 +8938,7 @@ function HomePage() {
                                     strokeLinecap="round"
                                     initial={{ strokeDashoffset: `${2 * Math.PI * 22}` }}
                                     animate={{ strokeDashoffset: `${2 * Math.PI * 22 * (1 - categoryProgress.percentage / 100)}` }}
-                                    transition={{ duration: 1.5, ease: "easeOut", delay: 0.8 + index * 0.1 }}
+                                    transition={{ duration: 0.9, ease: "easeOut", delay: 0.4 + index * 0.08 }}
                                   />
                                   <defs>
                                     <linearGradient id="progress-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -8580,7 +9027,7 @@ function HomePage() {
       </section>
 
       {/* Enhanced Essentials Section */}
-      <section id="essentials" className="py-20 relative">
+      <section id="essentials" className="py-14 sm:py-20 relative">
         {/* Background Elements */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50/30 via-transparent to-zinc-50/30 dark:from-slate-900/10 dark:to-zinc-900/10"></div>
         <div className="absolute top-10 left-10 w-72 h-72 bg-gradient-to-br from-blue-200/10 to-indigo-200/10 dark:from-blue-800/5 dark:to-indigo-800/5 rounded-full blur-3xl"></div>
@@ -8593,7 +9040,7 @@ function HomePage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center mb-10 sm:mb-16"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -8607,12 +9054,12 @@ function HomePage() {
                 The Essentials
               </span>
             </motion.div>
-            <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl mb-3 sm:mb-4">
               <span className="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 dark:from-slate-100 dark:via-indigo-100 dark:to-slate-100 bg-clip-text text-transparent">
                 Master the basics first
               </span>
             </h2>
-            <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-400 max-w-3xl mx-auto">
               {isAuthenticated ? 
                 "Your personalized skill categories with real-time progress tracking and smart recommendations." :
                 "Quick‑hit categories with beginner‑friendly guides and checklists."
@@ -8621,7 +9068,7 @@ function HomePage() {
           </motion.div>
 
           {/* Enhanced Category Grid */}
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {CATEGORIES.map((category, index) => {
               const categoryProgress = getCategoryProgress(category.key);
               
@@ -8688,31 +9135,30 @@ function HomePage() {
                       <div className={`absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-${config.accentColor}-300/30 to-${config.accentColor}-200/30 dark:from-${config.accentColor}-700/20 dark:to-${config.accentColor}-800/20 rounded-full blur-xl transform -translate-x-12 translate-y-12`}></div>
                     </div>
 
-                    <div className="relative z-10 p-6 h-full flex flex-col">
+                    <div className="relative z-10 p-5 sm:p-6 h-full flex flex-col">
                       {/* Header with Icon and Progress */}
                       <div className="flex items-start justify-between mb-4">
-                        <div className="relative">
-                          {/* Enhanced Icon */}
-                          <div className={`inline-flex rounded-2xl bg-gradient-to-br ${config.iconGradient} p-3 text-white shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
-                            {React.createElement(category.icon, { className: "h-7 w-7" })}
+                        <div className="relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16">
+                          {/* Icon container */}
+                          <div className={`absolute inset-0 grid place-items-center rounded-2xl bg-gradient-to-br ${config.iconGradient} text-white shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
+                            {React.createElement(category.icon, { className: "h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" })}
                           </div>
-                          
                           {/* Progress Ring Around Icon */}
                           {categoryProgress.total > 0 && (
-                            <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 56 56">
-                              <circle cx="28" cy="28" r="26" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-zinc-200 dark:text-zinc-700" />
+                            <svg className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full transform -rotate-90" viewBox="0 0 48 48">
+                              <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-zinc-200 dark:text-zinc-700" />
                               <motion.circle 
-                                cx="28" 
-                                cy="28" 
-                                r="26" 
+                                cx="24" 
+                                cy="24" 
+                                r="22" 
                                 stroke={`url(#${category.key}-gradient)`} 
                                 strokeWidth="2" 
                                 fill="transparent"
-                                strokeDasharray={`${2 * Math.PI * 26}`}
-                                strokeDashoffset={`${2 * Math.PI * 26 * (1 - categoryProgress.percentage / 100)}`}
+                                strokeDasharray={`${2 * Math.PI * 22}`}
+                                strokeDashoffset={`${2 * Math.PI * 22 * (1 - categoryProgress.percentage / 100)}`}
                                 strokeLinecap="round"
-                                initial={{ strokeDashoffset: `${2 * Math.PI * 26}` }}
-                                whileInView={{ strokeDashoffset: `${2 * Math.PI * 26 * (1 - categoryProgress.percentage / 100)}` }}
+                                initial={{ strokeDashoffset: `${2 * Math.PI * 22}` }}
+                                whileInView={{ strokeDashoffset: `${2 * Math.PI * 22 * (1 - categoryProgress.percentage / 100)}` }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 1.5, ease: "easeOut", delay: index * 0.2 + 0.5 }}
                               />
@@ -8743,7 +9189,7 @@ function HomePage() {
 
                       {/* Content */}
                       <div className="flex-1 space-y-3">
-                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                           {category.name}
                         </h3>
                         <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
@@ -8761,9 +9207,9 @@ function HomePage() {
                         </div>
                             
                             {/* Enhanced Progress Bar */}
-                            <div className="relative w-full bg-zinc-200/80 dark:bg-zinc-700/80 rounded-full h-3 overflow-hidden">
-                              <motion.div 
-                                className={`h-3 rounded-full bg-gradient-to-r ${config.progressGradient} shadow-sm relative overflow-hidden`}
+                            <div className="relative w-full bg-zinc-200/80 dark:bg-zinc-700/80 rounded-full h-2.5 overflow-hidden">
+                              <motion.div
+                                className={`h-2.5 rounded-full bg-gradient-to-r ${config.progressGradient} shadow-sm relative overflow-hidden`}
                                 initial={{ width: 0 }}
                                 whileInView={{ width: `${categoryProgress.percentage}%` }}
                                 viewport={{ once: true }}
@@ -8799,12 +9245,12 @@ function HomePage() {
                       </div>
 
                       {/* Enhanced Action Button */}
-                      <motion.div 
-                        className="mt-6"
+                      <motion.div
+                        className="mt-5 sm:mt-6"
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
                         viewport={{ once: true }}
-                        transition={{ delay: index * 0.1 + 1.2 }}
+                        transition={{ delay: index * 0.06 + 0.5 }}
                       >
                       <Button 
                           className={`w-full rounded-xl bg-gradient-to-r ${config.iconGradient} text-white hover:shadow-lg transition-all duration-200 group-hover:scale-105 border-0`}
@@ -8853,41 +9299,54 @@ function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.8 }}
-              className="mt-16 text-center"
+              className="mt-10 sm:mt-16 text-center"
             >
-              <div className="inline-flex items-center gap-8 px-8 py-4 rounded-2xl bg-gradient-to-r from-white/80 via-zinc-50/80 to-white/80 dark:from-zinc-900/80 dark:via-zinc-800/80 dark:to-zinc-900/80 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-700/50 shadow-lg">
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 flex items-center justify-center">
+              <div className="inline-flex items-center gap-4 sm:gap-8 px-5 sm:px-8 py-3 sm:py-4 rounded-2xl bg-gradient-to-r from-white/80 via-zinc-50/80 to-white/80 dark:from-zinc-900/80 dark:via-zinc-800/80 dark:to-zinc-900/80 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-700/50 shadow-lg">
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 flex items-center justify-center">
                     <Target className="h-3 w-3 text-white" />
                   </div>
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    <span className="font-bold text-zinc-900 dark:text-white">{progress.completedTasks?.length || 0}</span> tasks completed
+                    <span className="font-bold text-zinc-900 dark:text-white">{progress.completedTasks?.length || 0}</span> tasks
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 flex items-center justify-center">
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 flex items-center justify-center">
                     <Zap className="h-3 w-3 text-white" />
                   </div>
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    <span className="font-bold text-zinc-900 dark:text-white">{progress.totalPoints || 0}</span> XP earned
+                    <span className="font-bold text-zinc-900 dark:text-white">{progress.totalPoints || 0}</span> XP
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center">
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center">
                     <Trophy className="h-3 w-3 text-white" />
                   </div>
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    <span className="font-bold text-zinc-900 dark:text-white">{progress.unlockedAchievements?.length || 0}</span> achievements
+                    <span className="font-bold text-zinc-900 dark:text-white">{progress.unlockedAchievements?.length || 0}</span> achv
                   </span>
                 </div>
               </div>
+              {isAuthenticated && (
+                <div className="mt-4">
+                  {activePlan ? (
+                    <Button className="rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => { window.location.assign('/plan'); }} icon={ChevronRight}>
+                      Resume Your Plan
+                    </Button>
+                  ) : (
+                    <Button className="rounded-2xl border border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800" onClick={() => generatePlan()} icon={Rocket}>
+                      Create My Plan
+                    </Button>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
         </Container>
       </section>
 
       {/* Quiz */}
-      <section id="quiz" className="border-y border-zinc-100/70 py-16 dark:border-zinc-900/60">
+      <section id="quiz" className="border-y border-zinc-100/70 py-12 sm:py-16 dark:border-zinc-900/60">
         <Container>
           <SectionTitle
             eyebrow="Personalized Start"
@@ -8897,12 +9356,12 @@ function HomePage() {
 
           <Card>
             {!showQuiz ? (
-              <div className="flex flex-col items-center gap-4 py-8 text-center">
+              <div className="flex flex-col items-center gap-3 sm:gap-4 py-6 sm:py-8 text-center">
                 <HeartHandshake className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                 <p className="max-w-xl text-sm text-zinc-600 dark:text-zinc-400">
                   Answer a few quick questions about health, money, and living situation. No signup needed.
                 </p>
-                <Button className="rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setShowQuiz(true)} icon={CheckCircle2}>
+                <Button className="rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 px-5 py-3 text-base sm:px-6 sm:py-3.5 sm:text-sm" onClick={() => setShowQuiz(true)} icon={CheckCircle2}>
                   Start Quiz
                 </Button>
               </div>
@@ -8953,21 +9412,35 @@ function HomePage() {
                         Next
                       </Button>
                     ) : (
-                          <Button 
-                            className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700" 
-                            onClick={() => {
-                              // Mark quiz as completed and force results generation
-                              setQuizStep(COMPREHENSIVE_QUIZ.length);
-                              // Scroll to results after a brief delay to allow state update
-                              setTimeout(() => {
-                                const resultsElement = document.querySelector('[data-results-section]');
-                                if (resultsElement) {
-                                  resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                }
-                              }, 100);
-                            }}
-                          >
-                            See My Personal Plan
+                      <Button 
+                        className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700" 
+                        onClick={() => {
+                          // Complete quiz
+                          setQuizStep(COMPREHENSIVE_QUIZ.length);
+                          // Build minimal profile from answers
+                          const profile = {
+                            age: answers?.age?.value,
+                            living: answers?.living?.value,
+                            employment: answers?.employment?.value,
+                            timePerWeek: answers?.time?.value,
+                            tags: [
+                              answers?.living?.value === 'moving-soon' ? 'moving-out' : null,
+                              answers?.employment?.value === 'job-hunting' ? 'job' : null,
+                              answers?.employment?.value === 'in-school' ? 'student' : null,
+                            ].filter(Boolean),
+                          };
+                          try { localStorage.setItem('growup-user-profile', JSON.stringify(profile)); } catch {}
+                          // Signal plans hook to generate
+                          try { window.dispatchEvent(new CustomEvent('growup-generate-plan')); } catch {}
+                          setTimeout(() => {
+                            const resultsElement = document.querySelector('[data-results-section]');
+                            if (resultsElement) {
+                              resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                          }, 120);
+                        }}
+                      >
+                        See My Personal Plan
                       </Button>
                     )}
                   </div>
@@ -9393,6 +9866,162 @@ function HomePage() {
           </div>
         </Container>
       </footer>
+    </div>
+  );
+}
+
+// -----------------------------
+// Your Plan Page (MVP)
+// -----------------------------
+function YourPlanPage() {
+  const { activePlan, generatePlan, toggleTaskInPlan, completeWeekInPlan } = usePlansContext();
+  const { isAuthenticated } = useAuthContext();
+  const { isDark, toggle } = useThemeToggle();
+  const navigate = useNavigate();
+  const plan = activePlan;
+  const overall = React.useMemo(() => {
+    if (!plan) return { completed: 0, total: 0, percent: 0 };
+    const all = plan.weeks.flatMap(w => w.tasks);
+    const completed = all.filter(t => t.completed).length;
+    const total = all.length || 1;
+    return { completed, total, percent: Math.round((completed / total) * 100) };
+  }, [plan]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-black">
+      <header className="sticky top-0 z-40 w-full border-b border-zinc-200/60 bg-white/70 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-950/60">
+        <Container className="flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            <span className="text-sm font-bold tracking-tight">Your Plan</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button aria-label="Toggle theme" onClick={toggle} className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800" icon={isDark ? Sun : Moon}>
+              <span className="hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
+            </Button>
+            <Button onClick={() => navigate('/')} className="rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800" icon={ChevronRight}>Home</Button>
+          </div>
+        </Container>
+      </header>
+
+      <main className="py-10">
+        <Container>
+          {!plan ? (
+            <Card className="text-center">
+              <h2 className="text-xl font-bold mb-2">No active plan yet</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">Generate a personalized plan based on your profile.</p>
+              <Button className="rounded-xl bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => generatePlan()} icon={Rocket}>Generate Plan</Button>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              <SectionTitle eyebrow="Personalized" title="Your weekly plan" desc="Stay on track with a simple weekly checklist." />
+              <Card className="overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="font-semibold">Overall progress</div>
+                  <div className="text-xs text-zinc-500">{overall.completed}/{overall.total} done</div>
+                </div>
+                <div className="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-sky-500" style={{ width: `${overall.percent}%` }} />
+                </div>
+              </Card>
+              {plan.weeks.map((w, idx) => {
+                const completed = w.tasks.filter(t => t.completed).length;
+                const total = w.tasks.length || 1;
+                const percent = Math.round((completed / total) * 100);
+                return (
+                  <Card key={idx} className="overflow-hidden">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-semibold">Week {idx + 1}</div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-xs text-zinc-500">{completed}/{total} done</div>
+                        {completed < total && (
+                          <Button className="rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-xs px-3 py-1" onClick={() => completeWeekInPlan(idx)}>Mark Week Complete</Button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mb-4 h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-indigo-500 to-sky-500" style={{ width: `${percent}%` }} />
+                    </div>
+                    <div className="space-y-2">
+                      {w.tasks.map(t => (
+                        <button key={t.id} onClick={() => toggleTaskInPlan(t.id)} className={`w-full flex items-center gap-3 text-sm rounded-lg px-3 py-2 transition ${t.completed ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}>
+                          <CheckSquare className={`h-4 w-4 ${t.completed ? 'text-emerald-600' : 'text-zinc-400'}`} />
+                          <span className={`flex-1 text-left ${t.completed ? 'line-through text-zinc-400' : ''}`}>{t.guideId}</span>
+                          <Link to={`/guide/${t.guideId}`} className="text-indigo-600 dark:text-indigo-400 hover:underline text-xs">Open</Link>
+                        </button>
+                      ))}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </Container>
+      </main>
+    </div>
+  );
+}
+
+// -----------------------------
+// Guide Detail Page (MVP)
+// -----------------------------
+function GuideDetailPage() {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+
+  const normalize = (s) => (s || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, ' ').trim();
+  const slugify = (s) => normalize(s).replace(/\s+/g, '-');
+
+  const guide = useMemo(() => {
+    const all = getAllGuides();
+    const exact = all.find(g => g.id === slug || g.key === slug || slugify(g.title) === slug);
+    if (exact) return exact;
+    // fallback: broad search using upgraded searchGuides
+    const results = searchGuides(slug.replace(/-/g, ' '));
+    return results[0] || null;
+  }, [slug]);
+
+  if (!guide) {
+    return (
+      <div className="min-h-screen grid place-items-center text-center p-6">
+        <div>
+          <h2 className="text-xl font-bold mb-2">Guide not found</h2>
+          <Button className="rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800" onClick={() => navigate(-1)}>Go Back</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-black">
+      <header className="sticky top-0 z-40 w-full border-b border-zinc-200/60 bg-white/70 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-950/60">
+        <Container className="flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            <span className="text-sm font-bold tracking-tight">Guide</span>
+          </div>
+          <Button onClick={() => navigate(-1)} className="rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800" icon={ChevronRight}>Back</Button>
+        </Container>
+      </header>
+
+      <main className="py-10">
+        <Container>
+          <div className="mb-6">
+            <Badge>{guide.categoryName}</Badge>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-3">{guide.title}</h1>
+          <p className="text-zinc-600 dark:text-zinc-400 mb-6 max-w-2xl">{guide.summary}</p>
+
+          <Card>
+            <h3 className="font-semibold mb-3">Steps</h3>
+            <ol className="list-decimal pl-5 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+              {(guide.steps || []).map((s, i) => (
+                <li key={i}>{s}</li>
+              ))}
+            </ol>
+          </Card>
+        </Container>
+      </main>
     </div>
   );
 }
@@ -10866,18 +11495,22 @@ export default function GrowUpApp() {
   console.log('GrowUpApp rendered');
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<ProtectedHomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-          <Route path="/category/:categoryKey" element={<ProtectedRoute><CategoryPage /></ProtectedRoute>} />
-          <Route path="/search/:query" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
-          <Route path="*" element={<div>Route not found</div>} />
-        </Routes>
-      </Router>
+      <PlansProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<ProtectedHomePage />} />
+            <Route path="/guide/:slug" element={<ProtectedRoute><GuideDetailPage /></ProtectedRoute>} />
+            <Route path="/plan" element={<ProtectedRoute><YourPlanPage /></ProtectedRoute>} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+            <Route path="/category/:categoryKey" element={<ProtectedRoute><CategoryPage /></ProtectedRoute>} />
+            <Route path="/search/:query" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
+            <Route path="*" element={<div>Route not found</div>} />
+          </Routes>
+        </Router>
+      </PlansProvider>
     </AuthProvider>
   );
 }
