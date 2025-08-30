@@ -3633,7 +3633,8 @@ const DETAILED_GUIDES = {
         { id: "efund-2", text: "Schedule $25–$50 weekly auto‑transfer", completed: false },
         { id: "efund-3", text: "List 3 expenses to pause for 30 days", completed: false },
         { id: "efund-4", text: "List one item to sell and post it", completed: false }
-      ]
+      ],
+      icon: Wallet
     },
     {
       title: "High‑Yield Savings Setup (5% APY Basics)",
@@ -3651,7 +3652,8 @@ const DETAILED_GUIDES = {
         { id: "hysa-1", text: "Compare 3 HYSA providers and pick one", completed: false },
         { id: "hysa-2", text: "Link checking via micro‑deposits", completed: false },
         { id: "hysa-3", text: "Enable alerts for deposits/low balance", completed: false }
-      ]
+      ],
+      icon: Wallet
     },
     {
       title: "Beginner Investing with Index Funds",
@@ -3669,7 +3671,8 @@ const DETAILED_GUIDES = {
         { id: "invest-1", text: "Open or log into a brokerage/IRA", completed: false },
         { id: "invest-2", text: "Choose one diversified index fund (e.g., total market)", completed: false },
         { id: "invest-3", text: "Schedule monthly auto‑invest", completed: false }
-      ]
+      ],
+      icon: Wallet
     },
     {
       title: "Create a Debt Payoff Plan (Snowball/Avalanche)",
@@ -3687,7 +3690,8 @@ const DETAILED_GUIDES = {
         { id: "debt-1", text: "Create a debt spreadsheet with APRs", completed: false },
         { id: "debt-2", text: "Pick snowball or avalanche method", completed: false },
         { id: "debt-3", text: "Schedule one extra payment toward target debt", completed: false }
-      ]
+      ],
+      icon: Wallet
     },
     {
       title: "Build Credit with a Secured Card (Start Smart)",
@@ -3705,7 +3709,8 @@ const DETAILED_GUIDES = {
         { id: "secured-1", text: "Apply for a secured card (low fee)", completed: false },
         { id: "secured-2", text: "Add one small monthly subscription to card", completed: false },
         { id: "secured-3", text: "Enable autopay statement balance", completed: false }
-      ]
+      ],
+      icon: Wallet
     },
     {
       title: "Insurance Basics: Auto, Renters, Health",
@@ -3723,7 +3728,8 @@ const DETAILED_GUIDES = {
         { id: "ins-1", text: "Get 3 auto insurance quotes", completed: false },
         { id: "ins-2", text: "Get 3 renters insurance quotes", completed: false },
         { id: "ins-3", text: "Verify doctor network on your health plan", completed: false }
-      ]
+      ],
+      icon: Wallet
     },
     {
       title: "Negotiate Bills & Subscriptions (Save $50/mo)",
@@ -3741,7 +3747,8 @@ const DETAILED_GUIDES = {
         { id: "neg-1", text: "Call provider and ask for promo rate", completed: false },
         { id: "neg-2", text: "Cancel 1–2 unused subscriptions", completed: false },
         { id: "neg-3", text: "Set 6‑month reminder to re‑check rates", completed: false }
-      ]
+      ],
+      icon: Wallet
     },
     {
       title: "Paycheck 101: Read Your Stub & Withholding",
@@ -3759,7 +3766,8 @@ const DETAILED_GUIDES = {
         { id: "pay-1", text: "Open latest paystub and highlight each section", completed: false },
         { id: "pay-2", text: "Estimate annual net income", completed: false },
         { id: "pay-3", text: "Review W‑4 and adjust if needed", completed: false }
-      ]
+      ],
+      icon: Wallet
     },
     {
       title: "Side Hustle Setup (Weekend Plan)",
@@ -3777,7 +3785,8 @@ const DETAILED_GUIDES = {
         { id: "side-1", text: "Pick a platform and create profile", completed: false },
         { id: "side-2", text: "Complete ID verification and payout setup", completed: false },
         { id: "side-3", text: "Log first 3 gigs and income", completed: false }
-      ]
+      ],
+      icon: Wallet
     },
     {
       title: "Move‑Out Budget & Deposits Planner",
@@ -3813,7 +3822,8 @@ const DETAILED_GUIDES = {
         { id: "loan-1", text: "Submit FAFSA or verify current year filed", completed: false },
         { id: "loan-2", text: "List loan servicers and interest rates", completed: false },
         { id: "loan-3", text: "Enable autopay for interest reduction", completed: false }
-      ]
+      ],
+      icon: Wallet
     }
   ],
   "health": [
