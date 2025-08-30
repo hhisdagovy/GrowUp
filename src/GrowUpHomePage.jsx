@@ -1,6 +1,6 @@
 import React, { useMemo, useState, createContext, useContext, useEffect } from "react";
 import { motion } from "framer-motion";
-import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
 import {
   GraduationCap,
   Wallet,
