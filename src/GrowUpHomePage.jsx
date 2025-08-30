@@ -1,4 +1,6 @@
 import React, { useMemo, useState, createContext, useContext, useEffect } from "react";
+import { auth, listenToAuth } from './firebase.js';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile as fbUpdateProfile, sendEmailVerification } from 'firebase/auth';
 import { motion } from "framer-motion";
 import { HashRouter as Router, Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
 import {
@@ -6315,108 +6317,49 @@ function determineFocusAreas(answers) {
 // -----------------------------
 const AuthContext = createContext();
 
-// Mock authentication - in a real app this would connect to a backend
+// Firebase authentication implementation
 const useAuth = () => {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('growup-user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    const unsub = listenToAuth((fbUser) => {
+      if (fbUser) {
+        setUser({ uid: fbUser.uid, name: fbUser.displayName || fbUser.email?.split('@')[0], email: fbUser.email, emailVerified: fbUser.emailVerified });
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+    return () => unsub();
+  }, []);
 
   const login = async (email, password) => {
     setIsLoading(true);
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock authentication - in real app, validate with backend
-    const mockUser = {
-      id: Date.now(),
-      email,
-      name: email.split('@')[0],
-      avatar: null,
-      createdAt: new Date().toISOString()
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem('growup-user', JSON.stringify(mockUser));
-    setIsLoading(false);
-    return { success: true };
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return { success: true };
+    } catch (e) { return { success: false, error: e.message }; }
+    finally { setIsLoading(false); }
   };
 
   const signup = async (name, email, password) => {
     setIsLoading(true);
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock signup - in real app, create user in backend
-    const mockUser = {
-      id: Date.now(),
-      email,
-      name,
-      avatar: null,
-      createdAt: new Date().toISOString()
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem('growup-user', JSON.stringify(mockUser));
-    setIsLoading(false);
-    return { success: true };
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      if (name) await fbUpdateProfile(cred.user, { displayName: name });
+      await sendEmailVerification(cred.user);
+      return { success: true };
+    } catch (e) { return { success: false, error: e.message }; }
+    finally { setIsLoading(false); }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('growup-user');
-    localStorage.removeItem('growup-progress'); // Clear progress on logout
-  };
+  const logout = async () => { await signOut(auth); };
+  const updateProfile = async (updates) => { if (auth.currentUser) { await fbUpdateProfile(auth.currentUser, updates); setUser((u)=>u?{...u,...updates}:u);} };
+  const changePassword = async () => ({ success:false, error:'Use reset email' });
+  const deleteAccount = async () => ({ success:false, error:'Not implemented' });
 
-  const updateProfile = async (updates) => {
-    setIsLoading(true);
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const updatedUser = { ...user, ...updates };
-    setUser(updatedUser);
-    localStorage.setItem('growup-user', JSON.stringify(updatedUser));
-    setIsLoading(false);
-    return { success: true };
-  };
-
-  const changePassword = async (currentPassword, newPassword) => {
-    setIsLoading(true);
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // In a real app, you'd verify the current password with the backend
-    setIsLoading(false);
-    return { success: true };
-  };
-
-  const deleteAccount = async () => {
-    setIsLoading(true);
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Clear all data
-    setUser(null);
-    localStorage.removeItem('growup-user');
-    localStorage.removeItem('growup-progress');
-    localStorage.removeItem('growup-settings');
-    setIsLoading(false);
-    return { success: true };
-  };
-
-  return {
-    user,
-    isLoading,
-    login,
-    signup,
-    logout,
-    updateProfile,
-    changePassword,
-    deleteAccount,
-    isAuthenticated: !!user
-  };
+  return { user, isLoading, login, signup, logout, updateProfile, changePassword, deleteAccount, isAuthenticated: !!user };
 };
 
 const AuthProvider = ({ children }) => {
