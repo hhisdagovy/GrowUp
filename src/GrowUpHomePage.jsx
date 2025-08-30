@@ -3614,6 +3614,206 @@ const DETAILED_GUIDES = {
         "If you owe money, file on time even if you can't pay immediately"
       ],
       icon: Calendar,
+    },
+    {
+      title: "Build a $1,000 Emergency Fund (30 Days)",
+      summary: "Rapid plan to create your first safety cushion.",
+      difficulty: "Beginner",
+      duration: "30 min setup",
+      description: "Follow a simple 4‑step plan to quickly build your first $1,000 emergency fund and protect yourself from surprise expenses.",
+      steps: [
+        "Open a separate high‑yield savings account",
+        "Add automatic weekly transfers",
+        "Cut 2–3 small expenses temporarily",
+        "Sell one unused item for a cash boost",
+        "Celebrate milestones at $250/$500/$1,000"
+      ],
+      tasks: [
+        { id: "efund-1", text: "Open a high‑yield savings account", completed: false },
+        { id: "efund-2", text: "Schedule $25–$50 weekly auto‑transfer", completed: false },
+        { id: "efund-3", text: "List 3 expenses to pause for 30 days", completed: false },
+        { id: "efund-4", text: "List one item to sell and post it", completed: false }
+      ]
+    },
+    {
+      title: "High‑Yield Savings Setup (5% APY Basics)",
+      summary: "Find, open, and fund a HYSA the right way.",
+      difficulty: "Beginner",
+      duration: "15 min",
+      description: "Choose a trusted HYSA, understand transfer limits, and avoid common pitfalls.",
+      steps: [
+        "Compare APYs and transfer times",
+        "Link checking for instant transfers",
+        "Turn on balance and deposit alerts",
+        "Nickname account 'Emergency Fund' to avoid spending"
+      ],
+      tasks: [
+        { id: "hysa-1", text: "Compare 3 HYSA providers and pick one", completed: false },
+        { id: "hysa-2", text: "Link checking via micro‑deposits", completed: false },
+        { id: "hysa-3", text: "Enable alerts for deposits/low balance", completed: false }
+      ]
+    },
+    {
+      title: "Beginner Investing with Index Funds",
+      summary: "Set up long‑term investing in under an hour.",
+      difficulty: "Intermediate",
+      duration: "40 min",
+      description: "Open a brokerage, choose a diversified index fund, and automate contributions.",
+      steps: [
+        "Open brokerage (or use existing 401k/IRA)",
+        "Pick a broad market index fund",
+        "Set monthly auto‑invest",
+        "Disable frequent trading notifications"
+      ],
+      tasks: [
+        { id: "invest-1", text: "Open or log into a brokerage/IRA", completed: false },
+        { id: "invest-2", text: "Choose one diversified index fund (e.g., total market)", completed: false },
+        { id: "invest-3", text: "Schedule monthly auto‑invest", completed: false }
+      ]
+    },
+    {
+      title: "Create a Debt Payoff Plan (Snowball/Avalanche)",
+      summary: "Pick a method and schedule payments.",
+      difficulty: "Intermediate",
+      duration: "35 min",
+      description: "List debts, choose snowball or avalanche, and automate extra payments.",
+      steps: [
+        "List all debts with APR and minimums",
+        "Choose snowball (smallest balance) or avalanche (highest APR)",
+        "Automate minimums + one extra target payment",
+        "Track progress monthly"
+      ],
+      tasks: [
+        { id: "debt-1", text: "Create a debt spreadsheet with APRs", completed: false },
+        { id: "debt-2", text: "Pick snowball or avalanche method", completed: false },
+        { id: "debt-3", text: "Schedule one extra payment toward target debt", completed: false }
+      ]
+    },
+    {
+      title: "Build Credit with a Secured Card (Start Smart)",
+      summary: "Get approved, use lightly, pay in full.",
+      difficulty: "Beginner",
+      duration: "20 min",
+      description: "Open a secured card, keep utilization under 10%, and pay on time to grow credit.",
+      steps: [
+        "Compare secured cards with low fees",
+        "Deposit amount and activate",
+        "Use for one recurring bill",
+        "Autopay statement in full"
+      ],
+      tasks: [
+        { id: "secured-1", text: "Apply for a secured card (low fee)", completed: false },
+        { id: "secured-2", text: "Add one small monthly subscription to card", completed: false },
+        { id: "secured-3", text: "Enable autopay statement balance", completed: false }
+      ]
+    },
+    {
+      title: "Insurance Basics: Auto, Renters, Health",
+      summary: "Pick coverage that protects without overpaying.",
+      difficulty: "Beginner",
+      duration: "45 min",
+      description: "Understand deductibles, limits, and when each policy matters.",
+      steps: [
+        "List what you must insure (car, apartment, health)",
+        "Get 3 quotes for auto and renters",
+        "Check health network & preventive care",
+        "Raise deductible to lower premium (if EFund exists)"
+      ],
+      tasks: [
+        { id: "ins-1", text: "Get 3 auto insurance quotes", completed: false },
+        { id: "ins-2", text: "Get 3 renters insurance quotes", completed: false },
+        { id: "ins-3", text: "Verify doctor network on your health plan", completed: false }
+      ]
+    },
+    {
+      title: "Negotiate Bills & Subscriptions (Save $50/mo)",
+      summary: "Call scripts + cancellations in 20 minutes.",
+      difficulty: "Beginner",
+      duration: "25 min",
+      description: "Lower internet, phone, and streaming costs with simple negotiation scripts.",
+      steps: [
+        "List monthly bills and renewal dates",
+        "Use a negotiation script for internet/phone",
+        "Cancel or pause unused subscriptions",
+        "Set calendar to revisit in 6 months"
+      ],
+      tasks: [
+        { id: "neg-1", text: "Call provider and ask for promo rate", completed: false },
+        { id: "neg-2", text: "Cancel 1–2 unused subscriptions", completed: false },
+        { id: "neg-3", text: "Set 6‑month reminder to re‑check rates", completed: false }
+      ]
+    },
+    {
+      title: "Paycheck 101: Read Your Stub & Withholding",
+      summary: "Understand taxes, benefits, and net pay.",
+      difficulty: "Beginner",
+      duration: "20 min",
+      description: "Learn what each line on your paystub means and adjust your W‑4 confidently.",
+      steps: [
+        "Identify gross vs net pay",
+        "Review federal/state taxes, FICA",
+        "Check benefits deductions",
+        "Adjust W‑4 if refund/owed is large"
+      ],
+      tasks: [
+        { id: "pay-1", text: "Open latest paystub and highlight each section", completed: false },
+        { id: "pay-2", text: "Estimate annual net income", completed: false },
+        { id: "pay-3", text: "Review W‑4 and adjust if needed", completed: false }
+      ]
+    },
+    {
+      title: "Side Hustle Setup (Weekend Plan)",
+      summary: "Find one legit gig and get paid safely.",
+      difficulty: "Beginner",
+      duration: "40 min",
+      description: "Pick a simple side gig, set up payouts, and keep taxes clean.",
+      steps: [
+        "Choose one platform (e.g., tutoring, deliveries)",
+        "Create profile and verify ID",
+        "Set payout to checking",
+        "Track income/expenses for taxes"
+      ],
+      tasks: [
+        { id: "side-1", text: "Pick a platform and create profile", completed: false },
+        { id: "side-2", text: "Complete ID verification and payout setup", completed: false },
+        { id: "side-3", text: "Log first 3 gigs and income", completed: false }
+      ]
+    },
+    {
+      title: "Move‑Out Budget & Deposits Planner",
+      summary: "Know true costs before you sign.",
+      difficulty: "Beginner",
+      duration: "30 min",
+      description: "Estimate deposits, setup fees, and furnishing basics so you don’t get surprised.",
+      steps: [
+        "List one‑time costs (deposits, application, movers)",
+        "List monthly costs (rent, utilities, internet)",
+        "Create a move‑in savings target",
+        "Set timeline with weekly contributions"
+      ],
+      tasks: [
+        { id: "move-1", text: "Create a move‑out cost checklist", completed: false },
+        { id: "move-2", text: "Set a savings goal and timeline", completed: false },
+        { id: "move-3", text: "Open a dedicated 'Move' savings bucket", completed: false }
+      ]
+    },
+    {
+      title: "Student Loans 101 (FAFSA to Payments)",
+      summary: "Basics of aid, interest, and repayment plans.",
+      difficulty: "Intermediate",
+      duration: "35 min",
+      description: "Understand aid types, complete FAFSA, and pick a realistic repayment plan.",
+      steps: [
+        "Complete FAFSA and review award types",
+        "Know subsidized vs unsubsidized",
+        "Track servicer and interest rates",
+        "Pick repayment plan and set autopay"
+      ],
+      tasks: [
+        { id: "loan-1", text: "Submit FAFSA or verify current year filed", completed: false },
+        { id: "loan-2", text: "List loan servicers and interest rates", completed: false },
+        { id: "loan-3", text: "Enable autopay for interest reduction", completed: false }
+      ]
     }
   ],
   "health": [
