@@ -8044,7 +8044,7 @@ function CategoryPage() {
                 <Card className="h-full hover:shadow-lg transition-shadow">
                   <div className="flex items-start gap-4">
                     <div className="rounded-xl bg-zinc-100 p-3 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                      {React.createElement(guide.icon, { className: "h-6 w-6" })}
+                      {React.createElement(guide.icon || Wallet, { className: "h-6 w-6" })}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-3">
@@ -8061,11 +8061,11 @@ function CategoryPage() {
                           <span>{guide.duration || guide.timeToRead}</span>
                         </div>
                         <span>•</span>
-                        <span>{guide.steps.length} steps</span>
+                        <span>{(guide.steps || []).length} steps</span>
                         {guide.tasks && (
                           <>
                             <span>•</span>
-                            <span>{guide.tasks.length} tasks</span>
+                            <span>{(guide.tasks || []).length} tasks</span>
                           </>
                         )}
                       </div>
@@ -8098,7 +8098,7 @@ function CategoryPage() {
                             <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
                           </summary>
                           <div className="mt-3 space-y-2">
-                            {guide.steps.map((step, stepIdx) => (
+                            {(guide.steps || []).map((step, stepIdx) => (
                               <div key={stepIdx} className="flex items-start gap-2 text-sm">
                                 <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-medium text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
                                   {stepIdx + 1}
