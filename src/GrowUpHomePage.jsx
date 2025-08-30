@@ -1,6 +1,6 @@
 import React, { useMemo, useState, createContext, useContext, useEffect } from "react";
 import { auth, listenToAuth } from './firebase.js';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile as fbUpdateProfile, sendEmailVerification } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile as fbUpdateProfile, sendEmailVerification, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { motion } from "framer-motion";
 import { HashRouter as Router, Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
 import {
@@ -6343,6 +6343,16 @@ const useAuth = () => {
     finally { setIsLoading(false); }
   };
 
+  const loginWithGoogle = async () => {
+    setIsLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      return { success: true };
+    } catch (e) { return { success: false, error: e.message }; }
+    finally { setIsLoading(false); }
+  };
+
   const signup = async (name, email, password) => {
     setIsLoading(true);
     try {
@@ -6359,7 +6369,7 @@ const useAuth = () => {
   const changePassword = async () => ({ success:false, error:'Use reset email' });
   const deleteAccount = async () => ({ success:false, error:'Not implemented' });
 
-  return { user, isLoading, login, signup, logout, updateProfile, changePassword, deleteAccount, isAuthenticated: !!user };
+  return { user, isLoading, login, loginWithGoogle, signup, logout, updateProfile, changePassword, deleteAccount, isAuthenticated: !!user };
 };
 
 const AuthProvider = ({ children }) => {
@@ -6921,7 +6931,7 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { login, isLoading } = useAuthContext();
+  const { login, loginWithGoogle, isLoading } = useAuthContext();
   const { isDark, toggle } = useThemeToggle();
   const navigate = useNavigate();
 
@@ -7041,6 +7051,20 @@ function LoginPage() {
                   {isLoading ? 'Signing in...' : 'Sign in'}
                 </Button>
               </form>
+
+              <div className="mt-4 text-center">
+                <Link to="/reset" className="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">Forgot password?</Link>
+              </div>
+
+              <div className="mt-6">
+                <Button
+                  type="button"
+                  onClick={async () => { setError(''); const r = await loginWithGoogle(); if (r.success) navigate('/'); else setError(r.error || 'Google sign-in failed'); }}
+                  className="w-full rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  Continue with Google
+                </Button>
+              </div>
 
               <div className="mt-6 text-center">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -7240,6 +7264,65 @@ function SignupPage() {
                   </Link>
                 </p>
               </div>
+            </Card>
+          </div>
+        </Container>
+      </section>
+    </div>
+  );
+}
+
+function PasswordResetPage() {
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+  const { isDark, toggle } = useThemeToggle();
+
+  const handleReset = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const { sendPasswordResetEmail } = await import('firebase/auth');
+      await sendPasswordResetEmail(auth, email);
+      setSent(true);
+    } catch (e) { setError(e.message || 'Failed to send reset email'); }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-white text-zinc-900 dark:from-zinc-950 dark:via-zinc-950 dark:to-black dark:text-zinc-100">
+      <header className="sticky top-0 z-40 w-full border-b border-zinc-200/60 bg-white/70 backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-950/60">
+        <Container className="flex h-16 items-center justify-between">
+          <Link to="/" className="relative">
+            <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-indigo-500/20 to-sky-400/20 blur"></div>
+            <div className="relative flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 dark:bg-zinc-900">
+              <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-sm font-bold tracking-tight">Grow Up</span>
+            </div>
+          </Link>
+          <Button aria-label="Toggle theme" onClick={toggle} className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800" icon={isDark ? Sun : Moon}>
+            <span className="hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
+          </Button>
+        </Container>
+      </header>
+
+      <section className="py-16">
+        <Container>
+          <div className="mx-auto max-w-md">
+            <Card>
+              <h1 className="text-2xl font-bold mb-2">Reset your password</h1>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">Enter your email, and we'll send a reset link.</p>
+              {sent ? (
+                <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Reset email sent to {email}. Check your inbox.</div>
+              ) : (
+                <form onSubmit={handleReset} className="space-y-4">
+                  {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">{error}</div>}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Email address</label>
+                    <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required className="w-full h-11 rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none transition focus:ring-2 focus:ring-indigo-500 dark:border-zinc-800 dark:bg-zinc-900" />
+                  </div>
+                  <Button type="submit" className="w-full rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Send reset link</Button>
+                </form>
+              )}
             </Card>
           </div>
         </Container>
@@ -9973,11 +10056,22 @@ function GuideDetailPage() {
 // Protected Route Components
 // -----------------------------
 function ProtectedHomePage() {
-  const { isAuthenticated } = useAuthContext();
+  const { isAuthenticated, user } = useAuthContext();
   
   // Show landing page for non-authenticated users
   if (!isAuthenticated) {
     return <LandingPage />;
+  }
+  // Gate on email verification
+  if (user && user.emailVerified === false) {
+    return (
+      <div className="min-h-screen grid place-items-center p-6 text-center">
+        <div className="max-w-md">
+          <h2 className="text-xl font-bold mb-2">Verify your email</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">We sent a verification link to {user.email}. Please verify and refresh.</p>
+        </div>
+      </div>
+    );
   }
   
   // Show main platform for authenticated users
@@ -9985,7 +10079,7 @@ function ProtectedHomePage() {
 }
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuthContext();
+  const { isAuthenticated, user } = useAuthContext();
   const navigate = useNavigate();
   
   React.useEffect(() => {
@@ -9996,6 +10090,16 @@ function ProtectedRoute({ children }) {
   
   if (!isAuthenticated) {
     return <LandingPage />;
+  }
+  if (user && user.emailVerified === false) {
+    return (
+      <div className="min-h-screen grid place-items-center p-6 text-center">
+        <div className="max-w-md">
+          <h2 className="text-xl font-bold mb-2">Verify your email</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">We sent a verification link to {user.email}. Please verify and refresh.</p>
+        </div>
+      </div>
+    );
   }
   
   return children;
@@ -11442,8 +11546,9 @@ export default function GrowUpApp() {
       <Router>
         <Routes>
           <Route path="/" element={<ProtectedHomePage />} />
-            <Route path="/guide/:slug" element={<ProtectedRoute><GuideDetailPage /></ProtectedRoute>} />
-            <Route path="/plan" element={<ProtectedRoute><YourPlanPage /></ProtectedRoute>} />
+          <Route path="/reset" element={<PasswordResetPage />} />
+          <Route path="/guide/:slug" element={<ProtectedRoute><GuideDetailPage /></ProtectedRoute>} />
+          <Route path="/plan" element={<ProtectedRoute><YourPlanPage /></ProtectedRoute>} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
