@@ -5472,7 +5472,7 @@ const getAllGuides = () => {
 
 const searchGuides = (query) => {
   if (!query.trim()) return [];
-
+  
   const normalize = (s) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, ' ').trim();
   const slugify = (s) => normalize(s).replace(/\s+/g, '-');
 
@@ -8855,8 +8855,8 @@ function HomePage() {
                     onClick={() => { setShowQuiz(true); document.getElementById("quiz")?.scrollIntoView({ behavior: "smooth" }); }} 
                     icon={CheckCircle2}
                   >
-                    Take the Quiz
-                  </Button>
+                  Take the Quiz
+                </Button>
                 )}
               </motion.div>
 
@@ -9412,11 +9412,11 @@ function HomePage() {
                         Next
                       </Button>
                     ) : (
-                      <Button 
-                        className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700" 
-                        onClick={() => {
+                          <Button 
+                            className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700" 
+                            onClick={() => {
                           // Complete quiz
-                          setQuizStep(COMPREHENSIVE_QUIZ.length);
+                              setQuizStep(COMPREHENSIVE_QUIZ.length);
                           // Build minimal profile from answers
                           const profile = {
                             age: answers?.age?.value,
@@ -9432,15 +9432,15 @@ function HomePage() {
                           try { localStorage.setItem('growup-user-profile', JSON.stringify(profile)); } catch {}
                           // Signal plans hook to generate
                           try { window.dispatchEvent(new CustomEvent('growup-generate-plan')); } catch {}
-                          setTimeout(() => {
-                            const resultsElement = document.querySelector('[data-results-section]');
-                            if (resultsElement) {
-                              resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }
+                              setTimeout(() => {
+                                const resultsElement = document.querySelector('[data-results-section]');
+                                if (resultsElement) {
+                                  resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
                           }, 120);
-                        }}
-                      >
-                        See My Personal Plan
+                            }}
+                          >
+                            See My Personal Plan
                       </Button>
                     )}
                   </div>
@@ -11496,20 +11496,20 @@ export default function GrowUpApp() {
   return (
     <AuthProvider>
       <PlansProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<ProtectedHomePage />} />
+      <Router>
+        <Routes>
+          <Route path="/" element={<ProtectedHomePage />} />
             <Route path="/guide/:slug" element={<ProtectedRoute><GuideDetailPage /></ProtectedRoute>} />
             <Route path="/plan" element={<ProtectedRoute><YourPlanPage /></ProtectedRoute>} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-            <Route path="/category/:categoryKey" element={<ProtectedRoute><CategoryPage /></ProtectedRoute>} />
-            <Route path="/search/:query" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
-            <Route path="*" element={<div>Route not found</div>} />
-          </Routes>
-        </Router>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+          <Route path="/category/:categoryKey" element={<ProtectedRoute><CategoryPage /></ProtectedRoute>} />
+          <Route path="/search/:query" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
+          <Route path="*" element={<div>Route not found</div>} />
+        </Routes>
+      </Router>
       </PlansProvider>
     </AuthProvider>
   );
