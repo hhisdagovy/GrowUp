@@ -63,7 +63,8 @@ import {
   Calculator,
   MessageCircle,
   Heart,
-  Users
+  Users,
+  ChevronLeft
 } from "lucide-react";
 
 // -----------------------------
@@ -5509,7 +5510,8 @@ const useGameProgress = () => {
       currentStreak: 0,
       lastActivityDate: null,
       unlockedAchievements: [],
-      categoryProgress: {}
+      categoryProgress: {},
+      dailyActivity: {} // { "2024-01-15": { tasks: 3, guides: 1, points: 80 } }
     };
 
   const [progress, setProgress] = useState(() => {
@@ -5551,23 +5553,64 @@ const useGameProgress = () => {
     }
   };
 
-  const completeGuide = (guideTitle, categoryKey) => {
-    const today = new Date().toDateString();
-    const wasToday = progress.lastActivityDate === today;
-    const wasYesterday = progress.lastActivityDate === new Date(Date.now() - 86400000).toDateString();
+  // Helper function to calculate current streak from daily activity
+  const calculateStreak = (dailyActivity) => {
+    const today = new Date();
+    let streak = 0;
+    let currentDate = new Date(today);
     
-    const newProgress = {
+    // Check consecutive days backwards from today
+    while (true) {
+      const dateStr = currentDate.toDateString();
+      if (dailyActivity[dateStr] && (dailyActivity[dateStr].tasks > 0 || dailyActivity[dateStr].guides > 0)) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+  // Helper function to update daily activity
+  const updateDailyActivity = (progress, pointsEarned = 0, tasksCompleted = 0, guidesCompleted = 0) => {
+    const today = new Date().toDateString();
+    const currentActivity = progress.dailyActivity[today] || { tasks: 0, guides: 0, points: 0 };
+    
+    const updatedActivity = {
+      ...progress.dailyActivity,
+      [today]: {
+        tasks: currentActivity.tasks + tasksCompleted,
+        guides: currentActivity.guides + guidesCompleted,
+        points: currentActivity.points + pointsEarned
+      }
+    };
+    
+    return {
+      ...progress,
+      dailyActivity: updatedActivity,
+      currentStreak: calculateStreak(updatedActivity),
+      lastActivityDate: today
+    };
+  };
+
+  const completeGuide = (guideTitle, categoryKey) => {
+    const pointsEarned = DETAILED_GUIDES[categoryKey]?.find(g => g.title === guideTitle)?.difficulty === 'Beginner' ? 50 : 
+                        DETAILED_GUIDES[categoryKey]?.find(g => g.title === guideTitle)?.difficulty === 'Intermediate' ? 75 : 100;
+    
+    let newProgress = {
       ...progress,
       completedGuides: [...new Set([...progress.completedGuides, guideTitle])],
-      totalPoints: progress.totalPoints + (DETAILED_GUIDES[categoryKey]?.find(g => g.title === guideTitle)?.difficulty === 'Beginner' ? 50 : 
-                                         DETAILED_GUIDES[categoryKey]?.find(g => g.title === guideTitle)?.difficulty === 'Intermediate' ? 75 : 100),
-      currentStreak: wasToday ? progress.currentStreak : (wasYesterday ? progress.currentStreak + 1 : 1),
-      lastActivityDate: today,
+      totalPoints: progress.totalPoints + pointsEarned,
       categoryProgress: {
         ...progress.categoryProgress,
         [categoryKey]: (progress.categoryProgress[categoryKey] || 0) + 1
       }
     };
+
+    // Update daily activity and streak
+    newProgress = updateDailyActivity(newProgress, pointsEarned, 0, 1);
 
     // Check for new achievements
     const newAchievements = ACHIEVEMENTS.filter(achievement => {
@@ -5611,18 +5654,24 @@ const useGameProgress = () => {
 
   const toggleTask = (taskId, guideTitle) => {
     const isCompleted = progress.completedTasks.includes(taskId);
-    const today = new Date().toDateString();
+    const pointsChange = isCompleted ? -10 : 10;
+    const taskChange = isCompleted ? -1 : 1;
     
-    const newProgress = {
+    let newProgress = {
       ...progress,
       completedTasks: isCompleted 
         ? progress.completedTasks.filter(id => id !== taskId)
         : [...progress.completedTasks, taskId],
-      totalPoints: isCompleted 
-        ? progress.totalPoints - 10 
-        : progress.totalPoints + 10,
-      lastActivityDate: today
+      totalPoints: progress.totalPoints + pointsChange
     };
+
+    // Update daily activity and streak (only for completing tasks, not uncompleting)
+    if (!isCompleted) {
+      newProgress = updateDailyActivity(newProgress, pointsChange, taskChange, 0);
+    } else {
+      // For uncompleting, just update the date but don't affect daily activity tracking
+      newProgress.lastActivityDate = new Date().toDateString();
+    }
 
     // Check if any guide should be auto-completed after this task change
     const autoCompletedGuides = [];
@@ -10355,6 +10404,162 @@ function ProtectedRoute({ children }) {
 }
 
 // -----------------------------
+// Activity Calendar Component
+// -----------------------------
+const ActivityCalendar = ({ dailyActivity, currentStreak }) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  // Get calendar data for the current month
+  const getCalendarData = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday
+    
+    const days = [];
+    const currentDate = new Date(startDate);
+    
+    // Generate 6 weeks of days
+    for (let week = 0; week < 6; week++) {
+      for (let day = 0; day < 7; day++) {
+        const dateStr = currentDate.toDateString();
+        const activity = dailyActivity[dateStr];
+        const isCurrentMonth = currentDate.getMonth() === month;
+        const isToday = currentDate.toDateString() === new Date().toDateString();
+        
+        days.push({
+          date: new Date(currentDate),
+          dateStr,
+          activity,
+          isCurrentMonth,
+          isToday,
+          dayNumber: currentDate.getDate()
+        });
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+    
+    return days;
+  };
+  
+  const calendarDays = getCalendarData();
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+  
+  const getActivityLevel = (activity) => {
+    if (!activity || (activity.tasks === 0 && activity.guides === 0)) return 0;
+    const totalActivity = activity.tasks + activity.guides * 3; // Weight guides more
+    if (totalActivity >= 10) return 4;
+    if (totalActivity >= 6) return 3;
+    if (totalActivity >= 3) return 2;
+    return 1;
+  };
+  
+  const getActivityColor = (level) => {
+    switch (level) {
+      case 4: return 'bg-emerald-600 dark:bg-emerald-500';
+      case 3: return 'bg-emerald-500 dark:bg-emerald-400';
+      case 2: return 'bg-emerald-400 dark:bg-emerald-300';
+      case 1: return 'bg-emerald-200 dark:bg-emerald-600';
+      default: return 'bg-zinc-100 dark:bg-zinc-800';
+    }
+  };
+  
+  const navigateMonth = (direction) => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + direction);
+      return newDate;
+    });
+  };
+  
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-base font-semibold">Activity Calendar</h3>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            <span className="font-bold text-orange-600 dark:text-orange-400">{currentStreak} day streak</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => navigateMonth(-1)}
+            className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </button>
+          <span className="font-medium text-sm min-w-[100px] text-center">
+            {monthNames[currentMonth.getMonth()].slice(0, 3)} {currentMonth.getFullYear()}
+          </span>
+          <button
+            onClick={() => navigateMonth(1)}
+            className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            <ChevronRight className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+      
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 gap-0.5 mb-3">
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+          <div key={day} className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 py-1">
+            {day}
+          </div>
+        ))}
+        
+        {calendarDays.map((day, index) => {
+          const activityLevel = getActivityLevel(day.activity);
+          const colorClass = getActivityColor(activityLevel);
+          
+          return (
+            <div
+              key={index}
+              className={`
+                w-4 h-4 flex items-center justify-center text-xs rounded-sm cursor-pointer
+                transition-all duration-200 hover:scale-125 relative group
+                ${day.isCurrentMonth ? 'opacity-100' : 'opacity-40'}
+                ${day.isToday ? 'ring-1 ring-blue-500 dark:ring-blue-400' : ''}
+                ${colorClass}
+              `}
+              title={day.activity ? 
+                `${day.activity.tasks} tasks, ${day.activity.guides} guides` : 
+                'No activity'
+              }
+            >
+              {/* Tooltip */}
+              {day.activity && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-black dark:bg-white text-white dark:text-black text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                  {day.activity.tasks} tasks, {day.activity.guides} guides
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-2 border-transparent border-t-black dark:border-t-white"></div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Compact Legend */}
+      <div className="flex items-center justify-center gap-1 text-xs text-zinc-600 dark:text-zinc-400">
+        <span className="text-xs">Less</span>
+        <div className="flex items-center gap-0.5">
+          <div className="w-2 h-2 rounded-sm bg-zinc-100 dark:bg-zinc-800"></div>
+          <div className="w-2 h-2 rounded-sm bg-emerald-200 dark:bg-emerald-600"></div>
+          <div className="w-2 h-2 rounded-sm bg-emerald-400 dark:bg-emerald-300"></div>
+          <div className="w-2 h-2 rounded-sm bg-emerald-500 dark:bg-emerald-400"></div>
+          <div className="w-2 h-2 rounded-sm bg-emerald-600 dark:bg-emerald-500"></div>
+        </div>
+        <span className="text-xs">More</span>
+      </div>
+    </Card>
+  );
+};
+
+// -----------------------------
 // User Profile with Progress Dashboard
 // -----------------------------
 const UserProfile = () => {
@@ -11077,6 +11282,54 @@ const UserProfile = () => {
           </div>
         </div>
 
+        {/* Activity Calendar Section */}
+        <div className="mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <ActivityCalendar 
+                dailyActivity={progress.dailyActivity || {}} 
+                currentStreak={progress.currentStreak || 0} 
+              />
+            </div>
+            <div className="space-y-4">
+              {/* Quick Stats */}
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3 text-sm">This Month</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-600 dark:text-zinc-400">Tasks completed</span>
+                    <span className="font-medium">{Object.values(progress.dailyActivity || {}).reduce((sum, day) => sum + (day.tasks || 0), 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-600 dark:text-zinc-400">Guides finished</span>
+                    <span className="font-medium">{Object.values(progress.dailyActivity || {}).reduce((sum, day) => sum + (day.guides || 0), 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-600 dark:text-zinc-400">Active days</span>
+                    <span className="font-medium">{Object.keys(progress.dailyActivity || {}).length}</span>
+                  </div>
+                </div>
+              </Card>
+              
+              {/* Streak Info */}
+              <Card className="p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                    <Flame className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">Current Streak</div>
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400">Keep it going!</div>
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {progress.currentStreak || 0} days
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+
                 {/* Enhanced Achievement Gallery */}
         <div className="mb-12">
           <div className="mb-8 text-center">
@@ -11645,6 +11898,7 @@ const UserProfile = () => {
             </div>
           </Card>
         </div>
+
       </Container>
 
       {/* Financial Assessment Modal */}
