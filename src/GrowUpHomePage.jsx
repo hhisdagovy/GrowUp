@@ -8977,6 +8977,19 @@ function HomePage() {
             
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
+                {/* Mobile Profile Button */}
+                <Link to="/profile" className="sm:hidden">
+                  <div className="relative w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200">
+                    <User className="h-4 w-4 text-white" />
+                    {progress?.currentStreak > 0 && (
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                        <Flame className="h-2 w-2 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </Link>
+
+                {/* Desktop Profile Link */}
                 <div className="hidden sm:flex items-center gap-2 text-sm">
                   <Link to="/profile" className="group">
                     <div className="flex items-center gap-3 rounded-xl bg-white px-3 py-2 border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all duration-200 cursor-pointer">
@@ -10190,6 +10203,22 @@ function HomePage() {
           </div>
         </Container>
       </footer>
+
+      {/* Mobile Profile FAB - Only show on mobile when authenticated */}
+      {isAuthenticated && (
+        <div className="fixed bottom-6 right-6 sm:hidden z-40">
+          <Link to="/profile">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-sky-500 shadow-2xl flex items-center justify-center hover:shadow-3xl hover:scale-105 transition-all duration-300 group">
+              <User className="h-6 w-6 text-white group-hover:scale-110 transition-transform" />
+              {progress?.currentStreak > 0 && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                  <Flame className="h-3 w-3 text-white" />
+                </div>
+              )}
+            </div>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
