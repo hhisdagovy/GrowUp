@@ -76,7 +76,6 @@ import {
   RotateCcw,
   Gauge,
   Repeat,
-  Phoenix,
   Tornado,
   Compass
 } from "lucide-react";
@@ -5959,7 +5958,7 @@ const ACHIEVEMENTS = [
     id: "comeback-champion",
     title: "Comeback Champion",
     description: "Restart your streak 5 times after losing 14+ day streaks",
-    icon: Phoenix,
+    icon: RotateCcw,
     points: 1000,
     requirement: { type: "streak_recovery", count: 5 },
     rarity: "rare"
