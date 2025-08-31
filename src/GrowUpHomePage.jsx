@@ -65,7 +65,6 @@ import {
   Heart,
   Users,
   ChevronLeft,
-  TrendingUp,
   ListChecks,
   Layers,
   Sunrise,
@@ -75,13 +74,11 @@ import {
   Gem,
   Scale,
   RotateCcw,
-  CheckCircle2,
   Gauge,
   Repeat,
   Phoenix,
   Tornado,
-  Compass,
-  Briefcase
+  Compass
 } from "lucide-react";
 
 // -----------------------------
