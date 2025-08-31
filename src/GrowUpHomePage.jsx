@@ -64,7 +64,24 @@ import {
   MessageCircle,
   Heart,
   Users,
-  ChevronLeft
+  ChevronLeft,
+  TrendingUp,
+  ListChecks,
+  Layers,
+  Sunrise,
+  Grid3X3,
+  Circle,
+  Cog,
+  Gem,
+  Scale,
+  RotateCcw,
+  CheckCircle2,
+  Gauge,
+  Repeat,
+  Phoenix,
+  Tornado,
+  Compass,
+  Briefcase
 } from "lucide-react";
 
 // -----------------------------
@@ -5231,6 +5248,8 @@ const FEATURED_GUIDES = [
 // Gamification System
 // -----------------------------
 const ACHIEVEMENTS = [
+  // ===== COMMON ACHIEVEMENTS (40 total) =====
+  // First Steps & Early Progress
   {
     id: "first-steps",
     title: "First Steps",
@@ -5241,20 +5260,560 @@ const ACHIEVEMENTS = [
     rarity: "common"
   },
   {
+    id: "task-master",
+    title: "Task Master",
+    description: "Complete your first task",
+    icon: CheckSquare,
+    points: 25,
+    requirement: { type: "tasks_completed", count: 1 },
+    rarity: "common"
+  },
+  {
     id: "getting-started",
     title: "Getting Started",
-    description: "Complete 5 guides",
+    description: "Complete 3 guides",
     icon: Target,
+    points: 100,
+    requirement: { type: "guides_completed", count: 3 },
+    rarity: "common"
+  },
+  {
+    id: "momentum-builder",
+    title: "Momentum Builder",
+    description: "Complete 5 guides",
+    icon: TrendingUp,
     points: 150,
     requirement: { type: "guides_completed", count: 5 },
     rarity: "common"
   },
   {
+    id: "task-crusher",
+    title: "Task Crusher",
+    description: "Complete 10 tasks",
+    icon: Zap,
+    points: 100,
+    requirement: { type: "tasks_completed", count: 10 },
+    rarity: "common"
+  },
+  {
+    id: "daily-doer",
+    title: "Daily Doer",
+    description: "Complete tasks on 3 different days",
+    icon: Calendar,
+    points: 75,
+    requirement: { type: "active_days", count: 3 },
+    rarity: "common"
+  },
+  {
+    id: "week-warrior",
+    title: "Week Warrior",
+    description: "Complete tasks for 7 days",
+    icon: Clock,
+    points: 150,
+    requirement: { type: "active_days", count: 7 },
+    rarity: "common"
+  },
+  {
+    id: "point-collector",
+    title: "Point Collector",
+    description: "Earn 500 XP",
+    icon: Star,
+    points: 100,
+    requirement: { type: "points_earned", count: 500 },
+    rarity: "common"
+  },
+  {
+    id: "explorer",
+    title: "Explorer",
+    description: "Try guides from 2 different categories",
+    icon: Compass,
+    points: 100,
+    requirement: { type: "categories_touched", count: 2 },
+    rarity: "common"
+  },
+  {
+    id: "quick-learner",
+    title: "Quick Learner",
+    description: "Complete 3 guides in one day",
+    icon: Bolt,
+    points: 200,
+    requirement: { type: "guides_in_day", count: 3 },
+    rarity: "common"
+  },
+
+  // Category Starters (5 achievements)
+  {
+    id: "money-curious",
+    title: "Money Curious",
+    description: "Complete your first Money & Finance guide",
+    icon: DollarSign,
+    points: 75,
+    requirement: { type: "category_started", category: "money-finance" },
+    rarity: "common"
+  },
+  {
+    id: "health-conscious",
+    title: "Health Conscious",
+    description: "Complete your first Health & Wellness guide",
+    icon: Heart,
+    points: 75,
+    requirement: { type: "category_started", category: "health" },
+    rarity: "common"
+  },
+  {
+    id: "skill-seeker",
+    title: "Skill Seeker",
+    description: "Complete your first Life Skills guide",
+    icon: Wrench,
+    points: 75,
+    requirement: { type: "category_started", category: "life-skills" },
+    rarity: "common"
+  },
+  {
+    id: "career-focused",
+    title: "Career Focused",
+    description: "Complete your first Career & Education guide",
+    icon: Briefcase,
+    points: 75,
+    requirement: { type: "category_started", category: "career" },
+    rarity: "common"
+  },
+  {
+    id: "social-butterfly",
+    title: "Social Butterfly",
+    description: "Complete your first Social & Relationships guide",
+    icon: Users,
+    points: 75,
+    requirement: { type: "category_started", category: "social" },
+    rarity: "common"
+  },
+
+  // Progress Milestones (10 achievements)
+  {
+    id: "steady-progress",
+    title: "Steady Progress",
+    description: "Complete 10 guides",
+    icon: BarChart3,
+    points: 250,
+    requirement: { type: "guides_completed", count: 10 },
+    rarity: "common"
+  },
+  {
+    id: "task-enthusiast",
+    title: "Task Enthusiast",
+    description: "Complete 25 tasks",
+    icon: ListChecks,
+    points: 200,
+    requirement: { type: "tasks_completed", count: 25 },
+    rarity: "common"
+  },
+  {
+    id: "xp-hunter",
+    title: "XP Hunter",
+    description: "Earn 1,000 XP",
+    icon: Target,
+    points: 150,
+    requirement: { type: "points_earned", count: 1000 },
+    rarity: "common"
+  },
+  {
+    id: "consistency-king",
+    title: "Consistency King",
+    description: "Complete tasks for 14 days",
+    icon: Crown,
+    points: 300,
+    requirement: { type: "active_days", count: 14 },
+    rarity: "common"
+  },
+  {
+    id: "multi-tasker",
+    title: "Multi-tasker",
+    description: "Complete 5 tasks in one day",
+    icon: Layers,
+    points: 150,
+    requirement: { type: "tasks_in_day", count: 5 },
+    rarity: "common"
+  },
+  {
+    id: "weekend-warrior",
+    title: "Weekend Warrior",
+    description: "Complete tasks on both Saturday and Sunday",
+    icon: Sun,
+    points: 100,
+    requirement: { type: "weekend_active", count: 1 },
+    rarity: "common"
+  },
+  {
+    id: "early-bird",
+    title: "Early Bird",
+    description: "Complete a task before 9 AM",
+    icon: Sunrise,
+    points: 100,
+    requirement: { type: "early_completion", count: 1 },
+    rarity: "common"
+  },
+  {
+    id: "night-owl",
+    title: "Night Owl",
+    description: "Complete a task after 9 PM",
+    icon: Moon,
+    points: 100,
+    requirement: { type: "late_completion", count: 1 },
+    rarity: "common"
+  },
+  {
+    id: "category-sampler",
+    title: "Category Sampler",
+    description: "Try guides from 3 different categories",
+    icon: Grid3X3,
+    points: 150,
+    requirement: { type: "categories_touched", count: 3 },
+    rarity: "common"
+  },
+  {
+    id: "well-rounded",
+    title: "Well-Rounded",
+    description: "Complete at least 2 guides in 3 categories",
+    icon: Circle,
+    points: 250,
+    requirement: { type: "balanced_progress", count: 3 },
+    rarity: "common"
+  },
+
+  // Streak Achievements (15 achievements)
+  {
+    id: "streak-starter",
+    title: "Streak Starter",
+    description: "Maintain a 3-day learning streak",
+    icon: Flame,
+    points: 100,
+    requirement: { type: "streak", count: 3 },
+    rarity: "common"
+  },
+  {
+    id: "streak-keeper",
+    title: "Streak Keeper",
+    description: "Maintain a 5-day learning streak",
+    icon: Flame,
+    points: 150,
+    requirement: { type: "streak", count: 5 },
+    rarity: "common"
+  },
+  {
+    id: "week-streaker",
+    title: "Week Streaker",
+    description: "Maintain a 7-day learning streak",
+    icon: Flame,
+    points: 200,
+    requirement: { type: "streak", count: 7 },
+    rarity: "common"
+  },
+  {
+    id: "double-week",
+    title: "Double Week",
+    description: "Maintain a 14-day learning streak",
+    icon: Flame,
+    points: 350,
+    requirement: { type: "streak", count: 14 },
+    rarity: "common"
+  },
+  {
+    id: "three-week-hero",
+    title: "Three Week Hero",
+    description: "Maintain a 21-day learning streak",
+    icon: Flame,
+    points: 500,
+    requirement: { type: "streak", count: 21 },
+    rarity: "common"
+  },
+
+  // ===== UNCOMMON ACHIEVEMENTS (30 total) =====
+  // Higher Progress Milestones
+  {
+    id: "dedicated-learner",
+    title: "Dedicated Learner",
+    description: "Complete 15 guides",
+    icon: BookOpen,
+    points: 400,
+    requirement: { type: "guides_completed", count: 15 },
+    rarity: "uncommon"
+  },
+  {
+    id: "overachiever",
+    title: "Overachiever",
+    description: "Complete 20 guides",
+    icon: Star,
+    points: 500,
+    requirement: { type: "guides_completed", count: 20 },
+    rarity: "uncommon"
+  },
+  {
+    id: "task-machine",
+    title: "Task Machine",
+    description: "Complete 50 tasks",
+    icon: Cog,
+    points: 400,
+    requirement: { type: "tasks_completed", count: 50 },
+    rarity: "uncommon"
+  },
+  {
+    id: "xp-collector",
+    title: "XP Collector",
+    description: "Earn 2,500 XP",
+    icon: Gem,
+    points: 300,
+    requirement: { type: "points_earned", count: 2500 },
+    rarity: "uncommon"
+  },
+  {
+    id: "month-long",
+    title: "Month Long",
+    description: "Complete tasks for 30 days",
+    icon: Calendar,
+    points: 750,
+    requirement: { type: "active_days", count: 30 },
+    rarity: "uncommon"
+  },
+
+  // Streak Achievements (Uncommon)
+  {
+    id: "streak-warrior",
+    title: "Streak Warrior",
+    description: "Maintain a 30-day learning streak",
+    icon: Flame,
+    points: 750,
+    requirement: { type: "streak", count: 30 },
+    rarity: "uncommon"
+  },
+  {
+    id: "streak-champion",
+    title: "Streak Champion",
+    description: "Maintain a 45-day learning streak",
+    icon: Flame,
+    points: 1000,
+    requirement: { type: "streak", count: 45 },
+    rarity: "uncommon"
+  },
+  {
+    id: "streak-legend",
+    title: "Streak Legend",
+    description: "Maintain a 60-day learning streak",
+    icon: Flame,
+    points: 1250,
+    requirement: { type: "streak", count: 60 },
+    rarity: "uncommon"
+  },
+
+  // Category Progress (Uncommon)
+  {
+    id: "money-enthusiast",
+    title: "Money Enthusiast",
+    description: "Complete 5 Money & Finance guides",
+    icon: DollarSign,
+    points: 300,
+    requirement: { type: "category_progress", category: "money-finance", count: 5 },
+    rarity: "uncommon"
+  },
+  {
+    id: "health-advocate",
+    title: "Health Advocate",
+    description: "Complete 5 Health & Wellness guides",
+    icon: Heart,
+    points: 300,
+    requirement: { type: "category_progress", category: "health", count: 5 },
+    rarity: "uncommon"
+  },
+  {
+    id: "skill-builder",
+    title: "Skill Builder",
+    description: "Complete 5 Life Skills guides",
+    icon: Wrench,
+    points: 300,
+    requirement: { type: "category_progress", category: "life-skills", count: 5 },
+    rarity: "uncommon"
+  },
+  {
+    id: "career-climber",
+    title: "Career Climber",
+    description: "Complete 5 Career & Education guides",
+    icon: Briefcase,
+    points: 300,
+    requirement: { type: "category_progress", category: "career", count: 5 },
+    rarity: "uncommon"
+  },
+  {
+    id: "social-connector",
+    title: "Social Connector",
+    description: "Complete 5 Social & Relationships guides",
+    icon: Users,
+    points: 300,
+    requirement: { type: "category_progress", category: "social", count: 5 },
+    rarity: "uncommon"
+  },
+
+  // Special Achievements (Uncommon)
+  {
+    id: "speed-demon",
+    title: "Speed Demon",
+    description: "Complete 5 guides in one day",
+    icon: Zap,
+    points: 400,
+    requirement: { type: "guides_in_day", count: 5 },
+    rarity: "uncommon"
+  },
+  {
+    id: "task-tornado",
+    title: "Task Tornado",
+    description: "Complete 10 tasks in one day",
+    icon: Tornado,
+    points: 350,
+    requirement: { type: "tasks_in_day", count: 10 },
+    rarity: "uncommon"
+  },
+  {
+    id: "weekend-grinder",
+    title: "Weekend Grinder",
+    description: "Complete tasks on 10 weekends",
+    icon: Calendar,
+    points: 400,
+    requirement: { type: "weekend_active", count: 10 },
+    rarity: "uncommon"
+  },
+  {
+    id: "morning-person",
+    title: "Morning Person",
+    description: "Complete 10 tasks before 9 AM",
+    icon: Sunrise,
+    points: 300,
+    requirement: { type: "early_completion", count: 10 },
+    rarity: "uncommon"
+  },
+  {
+    id: "night-grinder",
+    title: "Night Grinder",
+    description: "Complete 10 tasks after 9 PM",
+    icon: Moon,
+    points: 300,
+    requirement: { type: "late_completion", count: 10 },
+    rarity: "uncommon"
+  },
+  {
+    id: "category-explorer",
+    title: "Category Explorer",
+    description: "Complete guides from all 5 categories",
+    icon: Compass,
+    points: 500,
+    requirement: { type: "all_categories_touched", count: 5 },
+    rarity: "uncommon"
+  },
+  {
+    id: "balanced-achiever",
+    title: "Balanced Achiever",
+    description: "Complete at least 3 guides in 4 categories",
+    icon: Scale,
+    points: 400,
+    requirement: { type: "balanced_progress", count: 4 },
+    rarity: "uncommon"
+  },
+  {
+    id: "comeback-kid",
+    title: "Comeback Kid",
+    description: "Restart your streak after losing a 7+ day streak",
+    icon: RotateCcw,
+    points: 300,
+    requirement: { type: "streak_recovery", count: 1 },
+    rarity: "uncommon"
+  },
+  {
+    id: "perfectionist",
+    title: "Perfectionist",
+    description: "Complete 10 guides with all tasks finished",
+    icon: CheckCircle2,
+    points: 400,
+    requirement: { type: "perfect_guides", count: 10 },
+    rarity: "uncommon"
+  },
+  {
+    id: "level-up",
+    title: "Level Up",
+    description: "Reach Level 5",
+    icon: TrendingUp,
+    points: 300,
+    requirement: { type: "level_reached", count: 5 },
+    rarity: "uncommon"
+  },
+  {
+    id: "xp-machine",
+    title: "XP Machine",
+    description: "Earn 5,000 XP",
+    icon: Zap,
+    points: 500,
+    requirement: { type: "points_earned", count: 5000 },
+    rarity: "uncommon"
+  },
+  {
+    id: "task-completionist",
+    title: "Task Completionist",
+    description: "Complete 100 tasks",
+    icon: Target,
+    points: 600,
+    requirement: { type: "tasks_completed", count: 100 },
+    rarity: "uncommon"
+  },
+  {
+    id: "guide-collector",
+    title: "Guide Collector",
+    description: "Complete 25 guides",
+    icon: BookOpen,
+    points: 600,
+    requirement: { type: "guides_completed", count: 25 },
+    rarity: "uncommon"
+  },
+  {
+    id: "two-month-streak",
+    title: "Two Month Streak",
+    description: "Complete tasks for 60 days",
+    icon: Calendar,
+    points: 1000,
+    requirement: { type: "active_days", count: 60 },
+    rarity: "uncommon"
+  },
+  {
+    id: "category-dabbler",
+    title: "Category Dabbler",
+    description: "Complete at least 1 guide in all 5 categories",
+    icon: Grid3X3,
+    points: 350,
+    requirement: { type: "categories_touched", count: 5 },
+    rarity: "uncommon"
+  },
+  {
+    id: "habit-former",
+    title: "Habit Former",
+    description: "Complete tasks on 21 consecutive days",
+    icon: Repeat,
+    points: 500,
+    requirement: { type: "streak", count: 21 },
+    rarity: "uncommon"
+  },
+  {
+    id: "productivity-pro",
+    title: "Productivity Pro",
+    description: "Complete 15 tasks in one day",
+    icon: Gauge,
+    points: 500,
+    requirement: { type: "tasks_in_day", count: 15 },
+    rarity: "uncommon"
+  },
+
+  // ===== RARE ACHIEVEMENTS (20 total) =====
+  // Category Masters
+  {
     id: "money-master",
     title: "Money Master",
     description: "Complete all Money & Finance guides",
     icon: Crown,
-    points: 500,
+    points: 1000,
     requirement: { type: "category_completed", category: "money-finance" },
     rarity: "rare"
   },
@@ -5263,7 +5822,7 @@ const ACHIEVEMENTS = [
     title: "Health Hero",
     description: "Complete all Health & Wellness guides",
     icon: Award,
-    points: 500,
+    points: 1000,
     requirement: { type: "category_completed", category: "health" },
     rarity: "rare"
   },
@@ -5272,36 +5831,325 @@ const ACHIEVEMENTS = [
     title: "Life Skills Legend",
     description: "Complete all Life Skills guides",
     icon: Medal,
-    points: 500,
+    points: 1000,
     requirement: { type: "category_completed", category: "life-skills" },
     rarity: "rare"
   },
   {
-    id: "adulting-champion",
-    title: "Adulting Champion",
-    description: "Complete guides from all 5 categories",
+    id: "career-champion",
+    title: "Career Champion",
+    description: "Complete all Career & Education guides",
     icon: Trophy,
     points: 1000,
-    requirement: { type: "all_categories_touched", count: 5 },
+    requirement: { type: "category_completed", category: "career" },
+    rarity: "rare"
+  },
+  {
+    id: "social-sage",
+    title: "Social Sage",
+    description: "Complete all Social & Relationships guides",
+    icon: Crown,
+    points: 1000,
+    requirement: { type: "category_completed", category: "social" },
+    rarity: "rare"
+  },
+
+  // High Achievement Milestones
+  {
+    id: "guide-master",
+    title: "Guide Master",
+    description: "Complete 50 guides",
+    icon: BookOpen,
+    points: 1200,
+    requirement: { type: "guides_completed", count: 50 },
+    rarity: "rare"
+  },
+  {
+    id: "task-overlord",
+    title: "Task Overlord",
+    description: "Complete 250 tasks",
+    icon: Crown,
+    points: 1000,
+    requirement: { type: "tasks_completed", count: 250 },
+    rarity: "rare"
+  },
+  {
+    id: "xp-master",
+    title: "XP Master",
+    description: "Earn 10,000 XP",
+    icon: Star,
+    points: 750,
+    requirement: { type: "points_earned", count: 10000 },
+    rarity: "rare"
+  },
+  {
+    id: "level-master",
+    title: "Level Master",
+    description: "Reach Level 10",
+    icon: Crown,
+    points: 800,
+    requirement: { type: "level_reached", count: 10 },
+    rarity: "rare"
+  },
+
+  // Streak Masters (Rare)
+  {
+    id: "streak-master",
+    title: "Streak Master",
+    description: "Maintain a 90-day learning streak",
+    icon: Flame,
+    points: 2000,
+    requirement: { type: "streak", count: 90 },
+    rarity: "rare"
+  },
+  {
+    id: "streak-god",
+    title: "Streak God",
+    description: "Maintain a 180-day learning streak",
+    icon: Flame,
+    points: 3000,
+    requirement: { type: "streak", count: 180 },
+    rarity: "rare"
+  },
+
+  // Special Rare Achievements
+  {
+    id: "speed-master",
+    title: "Speed Master",
+    description: "Complete 10 guides in one day",
+    icon: Bolt,
+    points: 1000,
+    requirement: { type: "guides_in_day", count: 10 },
+    rarity: "rare"
+  },
+  {
+    id: "task-hurricane",
+    title: "Task Hurricane",
+    description: "Complete 25 tasks in one day",
+    icon: Tornado,
+    points: 800,
+    requirement: { type: "tasks_in_day", count: 25 },
+    rarity: "rare"
+  },
+  {
+    id: "three-month-grind",
+    title: "Three Month Grind",
+    description: "Complete tasks for 90 days",
+    icon: Calendar,
+    points: 1500,
+    requirement: { type: "active_days", count: 90 },
+    rarity: "rare"
+  },
+  {
+    id: "perfect-month",
+    title: "Perfect Month",
+    description: "Complete tasks every day for 30 days",
+    icon: CheckCircle2,
+    points: 1200,
+    requirement: { type: "perfect_month", count: 1 },
+    rarity: "rare"
+  },
+  {
+    id: "category-perfectionist",
+    title: "Category Perfectionist",
+    description: "Complete all guides in 3 categories",
+    icon: Award,
+    points: 1500,
+    requirement: { type: "categories_mastered", count: 3 },
+    rarity: "rare"
+  },
+  {
+    id: "comeback-champion",
+    title: "Comeback Champion",
+    description: "Restart your streak 5 times after losing 14+ day streaks",
+    icon: Phoenix,
+    points: 1000,
+    requirement: { type: "streak_recovery", count: 5 },
+    rarity: "rare"
+  },
+  {
+    id: "weekend-legend",
+    title: "Weekend Legend",
+    description: "Complete tasks on 25 weekends",
+    icon: Calendar,
+    points: 800,
+    requirement: { type: "weekend_active", count: 25 },
+    rarity: "rare"
+  },
+  {
+    id: "early-legend",
+    title: "Early Legend",
+    description: "Complete 50 tasks before 9 AM",
+    icon: Sunrise,
+    points: 750,
+    requirement: { type: "early_completion", count: 50 },
+    rarity: "rare"
+  },
+  {
+    id: "night-legend",
+    title: "Night Legend",
+    description: "Complete 50 tasks after 9 PM",
+    icon: Moon,
+    points: 750,
+    requirement: { type: "late_completion", count: 50 },
+    rarity: "rare"
+  },
+
+  // ===== EPIC ACHIEVEMENTS (7 total) =====
+  {
+    id: "guide-legend",
+    title: "Guide Legend",
+    description: "Complete 75 guides",
+    icon: Crown,
+    points: 2000,
+    requirement: { type: "guides_completed", count: 75 },
+    rarity: "epic"
+  },
+  {
+    id: "task-emperor",
+    title: "Task Emperor",
+    description: "Complete 500 tasks",
+    icon: Crown,
+    points: 1800,
+    requirement: { type: "tasks_completed", count: 500 },
+    rarity: "epic"
+  },
+  {
+    id: "xp-legend",
+    title: "XP Legend",
+    description: "Earn 25,000 XP",
+    icon: Star,
+    points: 1500,
+    requirement: { type: "points_earned", count: 25000 },
+    rarity: "epic"
+  },
+  {
+    id: "streak-immortal",
+    title: "Streak Immortal",
+    description: "Maintain a 365-day learning streak",
+    icon: Flame,
+    points: 5000,
+    requirement: { type: "streak", count: 365 },
+    rarity: "epic"
+  },
+  {
+    id: "category-god",
+    title: "Category God",
+    description: "Complete all guides in 4 categories",
+    icon: Crown,
+    points: 2500,
+    requirement: { type: "categories_mastered", count: 4 },
+    rarity: "epic"
+  },
+  {
+    id: "level-legend",
+    title: "Level Legend",
+    description: "Reach Level 20",
+    icon: Star,
+    points: 1500,
+    requirement: { type: "level_reached", count: 20 },
+    rarity: "epic"
+  },
+  {
+    id: "year-long-grind",
+    title: "Year Long Grind",
+    description: "Complete tasks for 365 days",
+    icon: Calendar,
+    points: 3000,
+    requirement: { type: "active_days", count: 365 },
+    rarity: "epic"
+  },
+
+  // ===== LEGENDARY ACHIEVEMENTS (10 total) =====
+  {
+    id: "adulting-champion",
+    title: "Adulting Champion",
+    description: "Complete all guides in all 5 categories",
+    icon: Trophy,
+    points: 5000,
+    requirement: { type: "categories_mastered", count: 5 },
     rarity: "legendary"
   },
   {
-    id: "streak-warrior",
-    title: "Streak Warrior", 
-    description: "Maintain a 7-day learning streak",
-    icon: Flame,
-    points: 300,
-    requirement: { type: "streak", count: 7 },
-    rarity: "uncommon"
+    id: "guide-god",
+    title: "Guide God",
+    description: "Complete 100 guides",
+    icon: Crown,
+    points: 3000,
+    requirement: { type: "guides_completed", count: 100 },
+    rarity: "legendary"
   },
   {
-    id: "overachiever",
-    title: "Overachiever",
-    description: "Complete 20 guides",
+    id: "task-deity",
+    title: "Task Deity",
+    description: "Complete 1,000 tasks",
+    icon: Crown,
+    points: 2500,
+    requirement: { type: "tasks_completed", count: 1000 },
+    rarity: "legendary"
+  },
+  {
+    id: "xp-god",
+    title: "XP God",
+    description: "Earn 50,000 XP",
     icon: Star,
-    points: 750,
-    requirement: { type: "guides_completed", count: 20 },
-    rarity: "epic"
+    points: 2000,
+    requirement: { type: "points_earned", count: 50000 },
+    rarity: "legendary"
+  },
+  {
+    id: "streak-eternal",
+    title: "Streak Eternal",
+    description: "Maintain a 500-day learning streak",
+    icon: Flame,
+    points: 7500,
+    requirement: { type: "streak", count: 500 },
+    rarity: "legendary"
+  },
+  {
+    id: "level-god",
+    title: "Level God",
+    description: "Reach Level 50",
+    icon: Crown,
+    points: 3000,
+    requirement: { type: "level_reached", count: 50 },
+    rarity: "legendary"
+  },
+  {
+    id: "perfect-year",
+    title: "Perfect Year",
+    description: "Complete tasks every day for 365 days",
+    icon: CheckCircle2,
+    points: 10000,
+    requirement: { type: "perfect_year", count: 1 },
+    rarity: "legendary"
+  },
+  {
+    id: "speed-god",
+    title: "Speed God",
+    description: "Complete 25 guides in one day",
+    icon: Bolt,
+    points: 5000,
+    requirement: { type: "guides_in_day", count: 25 },
+    rarity: "legendary"
+  },
+  {
+    id: "task-storm",
+    title: "Task Storm",
+    description: "Complete 100 tasks in one day",
+    icon: Tornado,
+    points: 4000,
+    requirement: { type: "tasks_in_day", count: 100 },
+    rarity: "legendary"
+  },
+  {
+    id: "the-chosen-one",
+    title: "The Chosen One",
+    description: "Unlock all other achievements",
+    icon: Crown,
+    points: 10000,
+    requirement: { type: "all_achievements", count: 1 },
+    rarity: "legendary"
   }
 ];
 
@@ -5619,13 +6467,51 @@ const useGameProgress = () => {
       switch(achievement.requirement.type) {
         case "guides_completed":
           return newProgress.completedGuides.length >= achievement.requirement.count;
+        case "tasks_completed":
+          return newProgress.completedTasks.length >= achievement.requirement.count;
+        case "points_earned":
+          return newProgress.totalPoints >= achievement.requirement.count;
         case "category_completed":
           const categoryGuides = DETAILED_GUIDES[achievement.requirement.category] || [];
           return newProgress.categoryProgress[achievement.requirement.category] >= categoryGuides.length;
+        case "category_started":
+          return (newProgress.categoryProgress[achievement.requirement.category] || 0) >= 1;
+        case "category_progress":
+          return (newProgress.categoryProgress[achievement.requirement.category] || 0) >= achievement.requirement.count;
         case "all_categories_touched":
           return Object.keys(newProgress.categoryProgress).length >= achievement.requirement.count;
+        case "categories_touched":
+          return Object.keys(newProgress.categoryProgress).length >= achievement.requirement.count;
+        case "categories_mastered":
+          const masteredCount = Object.keys(newProgress.categoryProgress).filter(cat => {
+            const categoryGuides = DETAILED_GUIDES[cat] || [];
+            return newProgress.categoryProgress[cat] >= categoryGuides.length;
+          }).length;
+          return masteredCount >= achievement.requirement.count;
+        case "balanced_progress":
+          const categoriesWithMinGuides = Object.keys(newProgress.categoryProgress).filter(cat => 
+            newProgress.categoryProgress[cat] >= achievement.requirement.count
+          ).length;
+          return categoriesWithMinGuides >= achievement.requirement.count;
         case "streak":
           return newProgress.currentStreak >= achievement.requirement.count;
+        case "active_days":
+          return Object.keys(newProgress.dailyActivity || {}).length >= achievement.requirement.count;
+        case "level_reached":
+          const level = Math.floor(newProgress.totalPoints / 500) + 1;
+          return level >= achievement.requirement.count;
+        case "guides_in_day":
+        case "tasks_in_day":
+        case "weekend_active":
+        case "early_completion":
+        case "late_completion":
+        case "perfect_guides":
+        case "streak_recovery":
+        case "perfect_month":
+        case "perfect_year":
+        case "all_achievements":
+          // These require more complex tracking - implement later
+          return false;
         default:
           return false;
       }
@@ -10721,18 +11607,53 @@ const UserProfile = () => {
       switch(achievement.requirement.type) {
         case "guides_completed":
           return (progress?.completedGuides?.length || 0) >= achievement.requirement.count;
+        case "tasks_completed":
+          return (progress?.completedTasks?.length || 0) >= achievement.requirement.count;
+        case "points_earned":
+          return (progress?.totalPoints || 0) >= achievement.requirement.count;
         case "category_completed":
-          // Use the achievement category directly since it matches our category keys
           const categoryKey = achievement.requirement.category;
           const categoryProgress = sectionProgress[categoryKey];
           return categoryProgress && categoryProgress.percentage === 100;
+        case "category_started":
+          const startedCategoryProgress = sectionProgress[achievement.requirement.category];
+          return startedCategoryProgress && startedCategoryProgress.completed > 0;
+        case "category_progress":
+          const catProgress = sectionProgress[achievement.requirement.category];
+          return catProgress && catProgress.completed >= achievement.requirement.count;
         case "all_categories_touched":
+        case "categories_touched":
           const touchedCategories = Object.keys(sectionProgress).filter(cat => sectionProgress[cat].completed > 0);
           return touchedCategories.length >= achievement.requirement.count;
+        case "categories_mastered":
+          const masteredCategories = Object.keys(sectionProgress).filter(cat => sectionProgress[cat].percentage === 100);
+          return masteredCategories.length >= achievement.requirement.count;
+        case "balanced_progress":
+          const balancedCategories = Object.keys(sectionProgress).filter(cat => 
+            sectionProgress[cat].completed >= achievement.requirement.count
+          );
+          return balancedCategories.length >= achievement.requirement.count;
         case "streak":
           return (progress?.currentStreak || 0) >= achievement.requirement.count;
+        case "active_days":
+          return Object.keys(progress?.dailyActivity || {}).length >= achievement.requirement.count;
+        case "level_reached":
+          const level = Math.floor((progress?.totalPoints || 0) / 500) + 1;
+          return level >= achievement.requirement.count;
+        case "guides_in_day":
+        case "tasks_in_day":
+        case "weekend_active":
+        case "early_completion":
+        case "late_completion":
+        case "perfect_guides":
+        case "streak_recovery":
+        case "perfect_month":
+        case "perfect_year":
+        case "all_achievements":
+          // These require more complex tracking - implement later
+          return false;
         default:
-      return false;
+          return false;
       }
     });
 
