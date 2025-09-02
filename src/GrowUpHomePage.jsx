@@ -6146,6 +6146,105 @@ const ACHIEVEMENTS = [
     points: 10000,
     requirement: { type: "all_achievements", count: 1 },
     rarity: "legendary"
+  },
+
+  // ===== ADDITIONAL CREATIVE ACHIEVEMENTS (10 total) =====
+  // Time-based and Habit Achievements
+  {
+    id: "midnight-oil",
+    title: "Midnight Oil",
+    description: "Complete a task after 11 PM",
+    icon: Moon,
+    points: 100,
+    requirement: { type: "late_night_task", count: 1 },
+    rarity: "uncommon"
+  },
+  {
+    id: "early-bird",
+    title: "Early Bird",
+    description: "Complete a task before 7 AM",
+    icon: Sunrise,
+    points: 100,
+    requirement: { type: "early_morning_task", count: 1 },
+    rarity: "uncommon"
+  },
+  {
+    id: "weekend-warrior-plus",
+    title: "Weekend Warrior+",
+    description: "Complete guides on 4 consecutive weekends",
+    icon: Calendar,
+    points: 300,
+    requirement: { type: "weekend_streak", count: 4 },
+    rarity: "rare"
+  },
+  
+  // Social and Sharing Achievements
+  {
+    id: "mentor-mode",
+    title: "Mentor Mode",
+    description: "Help someone else start their first guide",
+    icon: HeartHandshake,
+    points: 250,
+    requirement: { type: "referral_completed", count: 1 },
+    rarity: "rare"
+  },
+  {
+    id: "progress-sharer",
+    title: "Progress Sharer",
+    description: "Share your achievement on social media",
+    icon: Globe,
+    points: 75,
+    requirement: { type: "social_share", count: 1 },
+    rarity: "common"
+  },
+  
+  // Creative and Fun Achievements
+  {
+    id: "guide-hopper",
+    title: "Guide Hopper",
+    description: "Start 5 different guides in one day (without completing)",
+    icon: Rocket,
+    points: 150,
+    requirement: { type: "guides_started_day", count: 5 },
+    rarity: "uncommon"
+  },
+  {
+    id: "perfectionist",
+    title: "Perfectionist",
+    description: "Complete 20 guides with 100% task completion",
+    icon: Gem,
+    points: 500,
+    requirement: { type: "perfect_guides", count: 20 },
+    rarity: "epic"
+  },
+  {
+    id: "speed-demon",
+    title: "Speed Demon",
+    description: "Complete a guide in under 30 minutes",
+    icon: Timer,
+    points: 200,
+    requirement: { type: "fast_completion", count: 1 },
+    rarity: "rare"
+  },
+  
+  // Long-term Commitment Achievements
+  {
+    id: "monthly-champion",
+    title: "Monthly Champion",
+    description: "Complete at least one task every day for 30 days",
+    icon: Medal,
+    points: 1000,
+    requirement: { type: "perfect_month", count: 1 },
+    rarity: "epic"
+  },
+  {
+    id: "knowledge-seeker",
+    title: "Knowledge Seeker",
+    description: "Read 100 external resources from guide links",
+    icon: BookOpen,
+    points: 300,
+    requirement: { type: "resources_clicked", count: 100 },
+    rarity: "rare"
   }
 ];
 
